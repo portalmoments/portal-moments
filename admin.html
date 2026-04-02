@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Portal Moments</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --black: #0A0A0A; --gray: #888888; --border: #E0E0E0; --white: #FFFFFF; --light: #FAFAFA; }
+  body { background: var(--light); color: var(--black); font-family: 'Jost', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  /* LOGIN */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .login-box { background: var(--white); border: 1px solid var(--border); padding: 3rem 2.5rem; width: 340px; text-align: center; }
+  .login-title { font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.4rem; }
+  .login-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.85rem; color: var(--gray); margin-bottom: 2rem; }
+  .login-input { width: 100%; border: none; border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.85rem; color: var(--black); outline: none; margin-bottom: 1.5rem; background: transparent; text-align: center; transition: border-color 0.2s ease; }
+  .login-input:focus { border-color: var(--black); }
+  .login-btn { width: 100%; background: var(--black); color: var(--white); border: none; padding: 0.85rem; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s ease; }
+  .login-btn:hover { background: #333; }
+  .login-error { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #cc4444; margin-top: 1rem; display: none; }
+
+  /* ADMIN PANEL */
+  .admin-wrap { display: none; }
+  .admin-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+  .admin-logo { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; }
+  .admin-logout { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; transition: color 0.2s ease; }
+  .admin-logout:hover { color: var(--black); }
+
+  .admin-body { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+  /* SECTION HEADERS */
+  .section-title { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+
+  /* NEW CLIENT FORM */
+  .new-client-form { background: var(--white); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); }
+  .form-input { border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.85rem; color: var(--black); outline: none; background: transparent; transition: border-color 0.2s ease; }
+  .form-input:focus { border-color: var(--black); }
+  .form-select { border: none; border-bottom: 1px solid var(--border); padding: 0.6rem 0; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.85rem; color: var(--black); outline: none; background: transparent; appearance: none; cursor: pointer; }
+  .form-btn { background: var(--black); color: var(--white); border: none; padding: 0.8rem 2rem; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s ease; }
+  .form-btn:hover { background: #333; }
+  .form-btn.secondary { background: transparent; color: var(--black); border: 1px solid var(--border); }
+  .form-btn.secondary:hover { background: var(--light); }
+  .form-actions { display: flex; gap: 0.75rem; align-items: center; }
+  .success-msg { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #44aa66; display: none; }
+
+  /* CLIENTS TABLE */
+  .clients-table { width: 100%; border-collapse: collapse; background: var(--white); }
+  .clients-table th { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-weight: 300; }
+  .clients-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; vertical-align: middle; }
+  .clients-table tr:last-child td { border-bottom: none; }
+  .clients-table tr:hover td { background: var(--light); }
+
+  /* STATUS BADGES */
+  .badge { display: inline-block; font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; }
+  .badge-pending { background: #FFF8E6; color: #B8860B; }
+  .badge-gallery { background: #E6F0FF; color: #1a5fb4; }
+  .badge-purchased { background: #E6F7ED; color: #2d6a4f; }
+  .badge-delivered { background: #F0F0F0; color: #666; }
+
+  /* ACTION BUTTONS */
+  .action-btn { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); background: none; border: 1px solid var(--border); padding: 4px 10px; cursor: pointer; transition: all 0.2s ease; margin-right: 4px; }
+  .action-btn:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+  .action-btn.primary { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* GALLERY LINK */
+  .gallery-url { font-size: 0.62rem; color: var(--gray); font-family: 'Jost', sans-serif; word-break: break-all; }
+  .copy-btn { font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; padding: 2px 6px; transition: color 0.2s ease; }
+  .copy-btn:hover { color: var(--black); }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1.2rem; text-align: center; }
+  .stat-number { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--black); display: block; }
+  .stat-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); }
+
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <p class="login-title">Portal Moments</p>
+    <p class="login-sub">Admin Access</p>
+    <input type="password" class="login-input" id="adminPassword" placeholder="Password" onkeydown="if(event.key==='Enter') login()" />
+    <button class="login-btn" onclick="login()">Enter</button>
+    <p class="login-error" id="loginError">Incorrect password</p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-wrap" id="adminWrap">
+
+  <div class="admin-header">
+    <span class="admin-logo">Portal Moments — Admin</span>
+    <button class="admin-logout" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-number" id="statTotal">0</span>
+        <span class="stat-label">Total Clients</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="statPurchased">0</span>
+        <span class="stat-label">Purchased</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="statDelivered">0</span>
+        <span class="stat-label">Delivered</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="statRevenue">$0</span>
+        <span class="stat-label">Revenue</span>
+      </div>
+    </div>
+
+    <!-- NEW CLIENT -->
+    <p class="section-title">New Client</p>
+    <div class="new-client-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Client Name</label>
+          <input type="text" class="form-input" id="clientName" placeholder="e.g. Sarah Johnson" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client Email</label>
+          <input type="email" class="form-input" id="clientEmail" placeholder="sarah@email.com" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cloudinary Folder</label>
+          <input type="text" class="form-input" id="clientFolder" placeholder="e.g. sarah-johnson-march26" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Session Date</label>
+          <input type="date" class="form-input" id="clientDate" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="form-btn" onclick="addClient()">Create Client Gallery</button>
+        <span class="success-msg" id="successMsg">✓ Client created</span>
+      </div>
+    </div>
+
+    <!-- CLIENTS LIST -->
+    <p class="section-title">All Clients</p>
+    <table class="clients-table" id="clientsTable">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Gallery Link</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="clientsBody">
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<script>
+  // ── CHANGE THIS PASSWORD ──
+  const ADMIN_PASSWORD = 'portalmoments2026';
+  const SITE_URL = window.location.origin;
+
+  // Load clients from localStorage
+  function getClients() {
+    return JSON.parse(localStorage.getItem('pm_clients') || '[]');
+  }
+  function saveClients(clients) {
+    localStorage.setItem('pm_clients', JSON.stringify(clients));
+  }
+
+  // LOGIN
+  function login() {
+    const pw = document.getElementById('adminPassword').value;
+    if (pw === ADMIN_PASSWORD) {
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('adminWrap').style.display = 'block';
+      sessionStorage.setItem('pm_admin', '1');
+      renderClients();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+  function logout() {
+    sessionStorage.removeItem('pm_admin');
+    document.getElementById('loginWrap').style.display = 'flex';
+    document.getElementById('adminWrap').style.display = 'none';
+    document.getElementById('adminPassword').value = '';
+  }
+
+  // Check if already logged in this session
+  if (sessionStorage.getItem('pm_admin')) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('adminWrap').style.display = 'block';
+    renderClients();
+  }
+
+  // ADD CLIENT
+  function addClient() {
+    const name = document.getElementById('clientName').value.trim();
+    const email = document.getElementById('clientEmail').value.trim();
+    const folder = document.getElementById('clientFolder').value.trim();
+    const date = document.getElementById('clientDate').value;
+
+    if (!name || !email || !folder) {
+      alert('Please fill in name, email and folder name.');
+      return;
+    }
+
+    const clients = getClients();
+    const client = {
+      id: Date.now(),
+      name, email, folder, date,
+      status: 'gallery',
+      package: null,
+      revenue: 0,
+      createdAt: new Date().toISOString()
+    };
+    clients.unshift(client);
+    saveClients(clients);
+
+    // Clear form
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientEmail').value = '';
+    document.getElementById('clientFolder').value = '';
+    document.getElementById('clientDate').value = '';
+
+    // Show success
+    const msg = document.getElementById('successMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 3000);
+
+    renderClients();
+  }
+
+  // RENDER CLIENTS TABLE
+  function renderClients() {
+    const clients = getClients();
+    const body = document.getElementById('clientsBody');
+
+    // Update stats
+    const purchased = clients.filter(c => c.status === 'purchased' || c.status === 'delivered');
+    const delivered = clients.filter(c => c.status === 'delivered');
+    const revenue = clients.reduce((sum, c) => sum + (c.revenue || 0), 0);
+    document.getElementById('statTotal').textContent = clients.length;
+    document.getElementById('statPurchased').textContent = purchased.length;
+    document.getElementById('statDelivered').textContent = delivered.length;
+    document.getElementById('statRevenue').textContent = '$' + revenue;
+
+    if (clients.length === 0) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:2rem; font-size:0.75rem; color:#CCC; letter-spacing:0.15em; text-transform:uppercase;">No clients yet</td></tr>`;
+      return;
+    }
+
+    const galleryUrl = (client) => `${SITE_URL}/gallery.html?email=${encodeURIComponent(client.email)}&folder=${client.folder}`;
+
+    const statusBadge = (status) => {
+      const map = { pending: ['Pending','badge-pending'], gallery: ['Gallery Ready','badge-gallery'], purchased: ['Purchased','badge-purchased'], delivered: ['Delivered','badge-delivered'] };
+      const [label, cls] = map[status] || ['Unknown',''];
+      return `<span class="badge ${cls}">${label}</span>`;
+    };
+
+    body.innerHTML = clients.map(client => `
+      <tr>
+        <td>
+          <div style="font-size:0.85rem">${client.name}</div>
+          <div style="font-size:0.7rem; color:var(--gray)">${client.email}</div>
+        </td>
+        <td style="font-size:0.75rem; color:var(--gray)">${client.date || '—'}</td>
+        <td>${statusBadge(client.status)}</td>
+        <td>
+          <span class="gallery-url">${galleryUrl(client).replace(window.location.origin,'')}</span>
+          <button class="copy-btn" onclick="copyLink('${galleryUrl(client)}', this)">Copy</button>
+        </td>
+        <td>
+          <button class="action-btn" onclick="openGallery(${client.id})">View</button>
+          <button class="action-btn" onclick="markDelivered(${client.id})">Mark Delivered</button>
+          <button class="action-btn" onclick="deleteClient(${client.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function copyLink(url, btn) {
+    navigator.clipboard.writeText(url);
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }
+
+  function openGallery(id) {
+    const client = getClients().find(c => c.id === id);
+    if (client) window.open(`/gallery.html?email=${encodeURIComponent(client.email)}&folder=${client.folder}`, '_blank');
+  }
+
+  function markDelivered(id) {
+    const clients = getClients();
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      client.status = 'delivered';
+      saveClients(clients);
+      renderClients();
+    }
+  }
+
+  function deleteClient(id) {
+    if (!confirm('Delete this client? This cannot be undone.')) return;
+    const clients = getClients().filter(c => c.id !== id);
+    saveClients(clients);
+    renderClients();
+  }
+</script>
+</body>
+</html>
