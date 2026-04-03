@@ -35,6 +35,23 @@
   .form-btn:hover { background: rgba(10,10,10,0.95); }
   .form-actions { display: flex; gap: 0.75rem; align-items: center; }
   .success-msg { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #44aa66; display: none; }
+
+  /* STATS — clickable filters */
+  .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1.2rem; text-align: center; cursor: pointer; transition: all 0.2s ease; }
+  .stat-card:hover { border-color: var(--black); }
+  .stat-card.active { background: var(--black); border-color: var(--black); }
+  .stat-card.active .stat-number { color: var(--white); }
+  .stat-card.active .stat-label { color: rgba(255,255,255,0.6); }
+  .stat-number { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--black); display: block; }
+  .stat-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); }
+
+  /* FILTER INDICATOR */
+  .filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .filter-indicator { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray); }
+  .filter-clear { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; text-decoration: underline; display: none; }
+  .filter-clear:hover { color: var(--black); }
+
   .clients-table { width: 100%; border-collapse: collapse; background: var(--white); }
   .clients-table th { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-weight: 300; }
   .clients-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; vertical-align: middle; }
@@ -49,17 +66,13 @@
   .action-btn { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); background: none; border: 1px solid var(--border); padding: 4px 10px; cursor: pointer; transition: all 0.2s ease; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
   .action-btn:hover { background: var(--black); color: var(--white); border-color: var(--black); }
   .action-btn.danger:hover { background: #cc4444; border-color: #cc4444; color: var(--white); }
+  .action-btn.reset { color: #B8860B; border-color: #F0D080; }
+  .action-btn.reset:hover { background: #B8860B; border-color: #B8860B; color: var(--white); }
   .gallery-url { font-size: 0.58rem; color: var(--gray); font-family: 'Jost', sans-serif; word-break: break-all; display: block; margin-bottom: 4px; }
-  .copy-btn { font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; padding: 2px 6px; transition: color 0.2s ease; }
-  .copy-btn:hover { color: var(--black); }
   .expiry-text { font-size: 0.58rem; color: var(--gray); }
   .expiry-text.warning { color: #cc4444; }
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
-  .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1.2rem; text-align: center; }
-  .stat-number { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--black); display: block; }
-  .stat-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); }
-  .workflow-note { font-size: 0.58rem; color: var(--gray); letter-spacing: 0.1em; margin-top: 0.3rem; }
-  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  .expiry-text.good { color: #2d6a4f; }
+  @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } .form-row { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -82,25 +95,31 @@
 
   <div class="admin-body">
 
+    <!-- STATS — clickable filters -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card active" id="stat-all" onclick="setFilter('all')">
         <span class="stat-number" id="statTotal">0</span>
-        <span class="stat-label">Total Clients</span>
+        <span class="stat-label">All Clients</span>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="stat-purchased" onclick="setFilter('purchased')">
         <span class="stat-number" id="statPurchased">0</span>
         <span class="stat-label">Purchased</span>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="stat-editing" onclick="setFilter('editing')">
+        <span class="stat-number" id="statEditing">0</span>
+        <span class="stat-label">Editing</span>
+      </div>
+      <div class="stat-card" id="stat-delivered" onclick="setFilter('delivered')">
         <span class="stat-number" id="statDelivered">0</span>
         <span class="stat-label">Delivered</span>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="stat-revenue" onclick="setFilter('all')">
         <span class="stat-number" id="statRevenue">$0</span>
         <span class="stat-label">Revenue</span>
       </div>
     </div>
 
+    <!-- NEW CLIENT -->
     <p class="section-title">New Client</p>
     <div class="new-client-form">
       <div class="form-row">
@@ -125,11 +144,15 @@
       </div>
       <div class="form-actions">
         <button class="form-btn" onclick="addClient()">Create Client Gallery</button>
-        <span class="success-msg" id="successMsg">✓ Client created — expires in 30 days</span>
+        <span class="success-msg" id="successMsg">✓ Client created — gallery expires in 30 days</span>
       </div>
     </div>
 
-    <p class="section-title">All Clients</p>
+    <!-- CLIENTS LIST -->
+    <div class="filter-bar">
+      <p class="section-title" style="margin:0;border:none;padding:0" id="filterTitle">All Clients</p>
+      <button class="filter-clear" id="filterClear" onclick="setFilter('all')">Clear filter</button>
+    </div>
     <table class="clients-table">
       <thead>
         <tr>
@@ -150,6 +173,7 @@
 <script>
   const ADMIN_PASSWORD = 'portalmoments2026';
   const SITE_URL = window.location.origin;
+  var currentFilter = 'all';
 
   function getClients() { return JSON.parse(localStorage.getItem('pm_clients') || '[]'); }
   function saveClients(c) { localStorage.setItem('pm_clients', JSON.stringify(c)); }
@@ -185,16 +209,14 @@
     if (!name || !email || !folder) { alert('Please fill in name, email and folder name.'); return; }
     const expiry = new Date();
     expiry.setDate(expiry.getDate() + 30);
-    getClients().unshift({ id: Date.now(), name, email, folder, date, expiry: expiry.toISOString().split('T')[0], status: 'gallery', revenue: 0, createdAt: new Date().toISOString() });
-    saveClients(getClients());
-
-    // rebuild with new client
     const clients = getClients();
-    const existing = clients.slice(1);
-    const newClient = { id: Date.now(), name, email, folder, date, expiry: expiry.toISOString().split('T')[0], status: 'gallery', revenue: 0, createdAt: new Date().toISOString() };
-    existing.unshift(newClient);
-    saveClients(existing);
-
+    clients.unshift({
+      id: Date.now(), name, email, folder, date,
+      expiry: expiry.toISOString().split('T')[0],
+      status: 'gallery', revenue: 0,
+      createdAt: new Date().toISOString()
+    });
+    saveClients(clients);
     document.getElementById('clientName').value = '';
     document.getElementById('clientEmail').value = '';
     document.getElementById('clientFolder').value = '';
@@ -205,34 +227,47 @@
     renderClients();
   }
 
-  function galleryUrl(client, state) {
+  function galleryUrl(client) {
     const firstName = encodeURIComponent(client.name.split(' ')[0]);
-    const s = state || client.status;
-    const stateParam = (s === 'editing' || s === 'delivered') ? '&state=' + s : '';
+    const stateParam = (client.status === 'editing' || client.status === 'delivered') ? '&state=' + client.status : '';
     return SITE_URL + '/gallery.html?email=' + encodeURIComponent(client.email) + '&folder=' + client.folder + '&name=' + firstName + '&expiry=' + (client.expiry || '') + stateParam;
   }
 
-  function expiryInfo(expiryStr) {
-    if (!expiryStr) return '<span class="expiry-text">—</span>';
-    const days = Math.ceil((new Date(expiryStr) - new Date()) / (1000 * 60 * 60 * 24));
+  function expiryInfo(client) {
+    if (!client.expiry) return '<span class="expiry-text">—</span>';
+    const days = Math.ceil((new Date(client.expiry) - new Date()) / (1000 * 60 * 60 * 24));
     if (days < 0) return '<span class="expiry-text warning">Expired</span>';
     if (days <= 5) return '<span class="expiry-text warning">' + days + ' days left</span>';
+    if (client.status === 'delivered') return '<span class="expiry-text good">' + days + ' days to download</span>';
     return '<span class="expiry-text">' + days + ' days left</span>';
   }
 
+  function setFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('stat-' + (filter === 'all' ? 'all' : filter)).classList.add('active');
+    const titles = { all: 'All Clients', purchased: 'Purchased Clients', editing: 'Clients Being Edited', delivered: 'Delivered Clients' };
+    document.getElementById('filterTitle').textContent = titles[filter] || 'All Clients';
+    document.getElementById('filterClear').style.display = filter === 'all' ? 'none' : 'inline';
+    renderClients();
+  }
+
   function renderClients() {
-    const clients = getClients();
+    const allClients = getClients();
     const body = document.getElementById('clientsBody');
-    const purchased = clients.filter(c => ['purchased','editing','delivered'].includes(c.status));
-    const delivered = clients.filter(c => c.status === 'delivered');
-    const revenue = clients.reduce((sum, c) => sum + (c.revenue || 0), 0);
-    document.getElementById('statTotal').textContent = clients.length;
-    document.getElementById('statPurchased').textContent = purchased.length;
-    document.getElementById('statDelivered').textContent = delivered.length;
-    document.getElementById('statRevenue').textContent = '$' + revenue;
+
+    // Update stats
+    document.getElementById('statTotal').textContent = allClients.length;
+    document.getElementById('statPurchased').textContent = allClients.filter(c => c.status === 'purchased').length;
+    document.getElementById('statEditing').textContent = allClients.filter(c => c.status === 'editing').length;
+    document.getElementById('statDelivered').textContent = allClients.filter(c => c.status === 'delivered').length;
+    document.getElementById('statRevenue').textContent = '$' + allClients.reduce((s, c) => s + (c.revenue || 0), 0);
+
+    // Apply filter
+    const clients = currentFilter === 'all' ? allClients : allClients.filter(c => c.status === currentFilter);
 
     if (clients.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;font-size:0.75rem;color:#CCC;letter-spacing:0.15em;text-transform:uppercase;">No clients yet</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;font-size:0.75rem;color:#CCC;letter-spacing:0.15em;text-transform:uppercase;">' + (currentFilter === 'all' ? 'No clients yet' : 'No clients in this category') + '</td></tr>';
       return;
     }
 
@@ -243,27 +278,32 @@
       return '<span class="badge ' + cls + '">' + label + '</span>';
     };
 
-    const actionButtons = (client) => {
+    const progressBtn = (client) => {
       const id = client.id;
-      let btns = '<button class="action-btn" onclick="openGallery(' + id + ')">View</button>';
-      btns += '<button class="action-btn" onclick="copyLink(\'' + galleryUrl(client).replace(/'/g, "\\'") + '\', this)">Copy link</button>';
-      btns += '<button class="action-btn" onclick="extendExpiry(' + id + ')">+30 days</button>';
-      if (client.status === 'gallery') btns += '<button class="action-btn" onclick="setStatus(' + id + ',\'purchased\')">Mark Purchased</button>';
-      if (client.status === 'purchased') btns += '<button class="action-btn" onclick="setStatus(' + id + ',\'editing\')">Mark Editing</button>';
-      if (client.status === 'editing') btns += '<button class="action-btn" onclick="setStatus(' + id + ',\'delivered\')">Mark Delivered</button>';
-      btns += '<button class="action-btn danger" onclick="deleteClient(' + id + ')">Delete</button>';
-      return btns;
+      if (client.status === 'gallery') return '<button class="action-btn" onclick="setStatus(' + id + ',\'purchased\')">Mark Purchased</button>';
+      if (client.status === 'purchased') return '<button class="action-btn" onclick="setStatus(' + id + ',\'editing\')">Mark Editing</button>';
+      if (client.status === 'editing') return '<button class="action-btn" onclick="setStatus(' + id + ',\'delivered\')">Mark Delivered</button>';
+      return '';
     };
 
     body.innerHTML = clients.map(client => {
       const url = galleryUrl(client);
+      const id = client.id;
       return '<tr>' +
         '<td><div style="font-size:0.85rem">' + client.name + '</div><div style="font-size:0.7rem;color:var(--gray)">' + client.email + '</div></td>' +
         '<td style="font-size:0.75rem;color:var(--gray)">' + (client.date || '—') + '</td>' +
         '<td>' + statusBadge(client.status, client.expiry) + '</td>' +
-        '<td>' + expiryInfo(client.expiry) + '</td>' +
-        '<td><span class="gallery-url">' + url.replace(window.location.origin,'').substring(0,55) + '...</span></td>' +
-        '<td>' + actionButtons(client) + '</td>' +
+        '<td>' + expiryInfo(client) + '</td>' +
+        '<td><span class="gallery-url">' + url.replace(window.location.origin,'').substring(0,50) + '...</span>' +
+          '<button class="action-btn" onclick="copyLink(\'' + url.replace(/'/g, "\\'") + '\', this)" style="margin-top:4px">Copy link</button>' +
+        '</td>' +
+        '<td>' +
+          '<button class="action-btn" onclick="openGallery(' + id + ')">View</button>' +
+          progressBtn(client) +
+          '<button class="action-btn reset" onclick="resetStatus(' + id + ')">Reset</button>' +
+          '<button class="action-btn" onclick="extendExpiry(' + id + ')">+30 days</button>' +
+          '<button class="action-btn danger" onclick="deleteClient(' + id + ')">Delete</button>' +
+        '</td>' +
       '</tr>';
     }).join('');
   }
@@ -274,26 +314,55 @@
     btn.textContent = 'Copied!';
     setTimeout(() => btn.textContent = orig, 2000);
   }
+
   function openGallery(id) {
     const client = getClients().find(c => c.id === id);
     if (client) window.open(galleryUrl(client), '_blank');
   }
+
   function setStatus(id, status) {
     const clients = getClients();
     const client = clients.find(c => c.id === id);
-    if (client) { client.status = status; saveClients(clients); renderClients(); }
+    if (!client) return;
+    client.status = status;
+    // Reset expiry to 30 days from now when delivered
+    if (status === 'delivered') {
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 30);
+      client.expiry = expiry.toISOString().split('T')[0];
+      client.deliveredAt = new Date().toISOString();
+    }
+    saveClients(clients);
+    renderClients();
   }
+
+  function resetStatus(id) {
+    if (!confirm('Reset this client back to Gallery Ready? This will not delete their photos.')) return;
+    const clients = getClients();
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      client.status = 'gallery';
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 30);
+      client.expiry = expiry.toISOString().split('T')[0];
+      saveClients(clients);
+      renderClients();
+    }
+  }
+
   function extendExpiry(id) {
     const clients = getClients();
     const client = clients.find(c => c.id === id);
     if (client) {
       const current = client.expiry ? new Date(client.expiry) : new Date();
+      if (current < new Date()) current.setTime(new Date().getTime());
       current.setDate(current.getDate() + 30);
       client.expiry = current.toISOString().split('T')[0];
       saveClients(clients);
       renderClients();
     }
   }
+
   function deleteClient(id) {
     if (!confirm('Delete this client? This cannot be undone.')) return;
     saveClients(getClients().filter(c => c.id !== id));
