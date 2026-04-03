@@ -87,16 +87,16 @@
     transition: opacity 0.3s ease;
   }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal-overlay.open .modal-blur { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(255,255,255,0.15); }
 
-  /* BLUR LAYER — sits behind the card, blurs everything */
+  /* BLUR LAYER — soft overlay that fades smoothly */
   .modal-blur {
     position: absolute;
     inset: 0;
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
     background: rgba(255,255,255,0);
-    transition: backdrop-filter 0.5s ease, -webkit-backdrop-filter 0.5s ease, background 0.5s ease;
+    transition: background 0.5s ease;
+  }
+  .modal-blur.active {
+    background: rgba(255,255,255,0.55);
   }
 
   /* WHITE CARD — floats above the blur */
@@ -195,7 +195,7 @@
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-blur" onclick="closePortal()"></div>
+  <div class="modal-blur" id="modalBlur" onclick="closePortal()"></div>
   <div class="modal">
     <p class="modal-title">Your Portal</p>
     <p class="modal-sub">Enter the email you used to contact us.<br>Your moment is waiting.</p>
@@ -263,10 +263,16 @@
     document.getElementById('portalError').style.display = 'none';
     document.getElementById('portalEmail').value = '';
     document.getElementById('modalOverlay').classList.add('open');
+    setTimeout(function() {
+      document.getElementById('modalBlur').classList.add('active');
+    }, 20);
   }
 
   function closePortal() {
-    document.getElementById('modalOverlay').classList.remove('open');
+    document.getElementById('modalBlur').classList.remove('active');
+    setTimeout(function() {
+      document.getElementById('modalOverlay').classList.remove('open');
+    }, 400);
   }
 
   function findPortal() {
