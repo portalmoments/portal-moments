@@ -22,8 +22,6 @@
   .gallery-hero { padding: 3rem 2rem 1.5rem; text-align: center; }
   .gallery-greeting { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 1.8rem; color: var(--black); margin-bottom: 0.5rem; }
   .gallery-sub { font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gray); line-height: 2; }
-
-  /* PACKAGES */
   .packages { display: flex; gap: 1px; margin: 2rem 1.5rem; background: var(--border); border: 1px solid var(--border); }
   .package { flex: 1; background: var(--white); padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
   .package:hover { background: #F5F5F5; }
@@ -34,102 +32,35 @@
   .package.selected .package-price { color: var(--white); }
   .package-desc { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); display: block; transition: color 0.2s ease; }
   .package.selected .package-desc { color: rgba(255,255,255,0.6); }
-
-  /* SELECTION INSTRUCTIONS */
   .selection-instructions { text-align: center; padding: 1.5rem 1.5rem 0.5rem; }
   .selection-title { font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gray); }
   .selection-counter { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--black); margin-top: 0.4rem; display: block; }
   .selection-hint { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #BBBBBB; margin-top: 0.3rem; display: block; }
-
-  /* PHOTO GRID */
   .gallery-label { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gray); text-align: center; padding: 1rem 0 0.5rem; }
   .gallery-note { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #BBBBBB; text-align: center; margin-bottom: 1.5rem; }
   .photo-grid { columns: 3; column-gap: 6px; padding: 0 1.5rem; }
-  .photo-item {
-    break-inside: avoid; margin-bottom: 6px;
-    position: relative; overflow: hidden; cursor: pointer;
-    transition: opacity 0.2s ease;
-  }
-  .photo-item img {
-    width: 100%; display: block;
-    pointer-events: none;
-    user-select: none;
-    -webkit-user-drag: none;
-  }
+  .photo-item { break-inside: avoid; margin-bottom: 6px; position: relative; overflow: hidden; cursor: pointer; transition: opacity 0.2s ease; }
+  .photo-item img { width: 100%; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
   .photo-item:hover { opacity: 0.92; }
-
-  /* WATERMARK */
-  .photo-item::after {
-    content: 'Portal Moments';
-    position: absolute;
-    bottom: 10px; right: 12px;
-    font-family: 'Jost', sans-serif;
-    font-weight: 200;
-    font-size: 0.55rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.7);
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  /* SELECTED STATE */
-  .photo-item.photo-selected::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(10,10,10,0.35);
-    z-index: 3;
-    pointer-events: none;
-  }
-  .photo-item.photo-selected .checkmark {
-    display: flex;
-  }
-  .checkmark {
-    display: none;
-    position: absolute;
-    top: 10px; right: 10px;
-    width: 24px; height: 24px;
-    background: var(--white);
-    border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    z-index: 4;
-    pointer-events: none;
-    font-size: 12px;
-  }
-
-  /* DIMMED STATE — when package selected and limit reached */
+  .photo-item::after { content: 'Portal Moments'; position: absolute; bottom: 10px; right: 12px; font-family: 'Jost', sans-serif; font-weight: 200; font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.7); text-shadow: 0 1px 3px rgba(0,0,0,0.5); pointer-events: none; z-index: 2; }
+  .photo-item.photo-selected::before { content: ''; position: absolute; inset: 0; background: rgba(10,10,10,0.35); z-index: 3; pointer-events: none; }
+  .photo-item.photo-selected .checkmark { display: flex; }
+  .checkmark { display: none; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: var(--white); border-radius: 50%; align-items: center; justify-content: center; z-index: 4; pointer-events: none; font-size: 12px; }
   .photo-item.photo-dimmed { opacity: 0.4; cursor: not-allowed; }
-
-  /* PURCHASE SECTION */
   .purchase-section { padding: 2.5rem 1.5rem; text-align: center; border-top: 1px solid var(--border); margin-top: 2rem; }
   .purchase-summary { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 2rem; line-height: 2; }
-  .purchase-btn {
-    display: inline-block; font-family: 'Jost', sans-serif; font-weight: 300;
-    font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase;
-    color: var(--white); background: rgba(10,10,10,0.8); border: none;
-    padding: 1rem 3rem; cursor: pointer; transition: background 0.2s ease;
-  }
+  .purchase-btn { display: inline-block; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white); background: rgba(10,10,10,0.8); border: none; padding: 1rem 3rem; cursor: pointer; transition: background 0.2s ease; }
   .purchase-btn:hover { background: rgba(10,10,10,0.95); }
   .purchase-btn:disabled { background: rgba(10,10,10,0.2); cursor: default; }
   .purchase-note { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #BBBBBB; margin-top: 1rem; }
-
-  /* FREE NOTE */
   .free-note { background: #FAFAFA; border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin: 0 1.5rem 2rem; text-align: center; }
   .free-note-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.95rem; color: var(--gray); }
-
-  /* EXPIRY */
   .expiry-note { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray); text-align: center; margin-bottom: 2rem; }
   .expired-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; text-align: center; padding: 2rem; }
   .expired-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.8rem; color: var(--black); }
   .expired-sub { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2; }
-
   footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; }
   .footer-copy { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: #CCCCCC; }
-
-  /* LIGHTBOX */
   .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
   .lightbox.open { opacity: 1; pointer-events: all; }
   .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
@@ -139,7 +70,6 @@
   .lightbox-arrow:hover { color: white; }
   .lightbox-arrow.prev { left: 1rem; }
   .lightbox-arrow.next { right: 1rem; }
-
   @media (max-width: 768px) { .photo-grid { columns: 2; } .packages { flex-direction: column; gap: 1px; } }
   @media (max-width: 480px) { .photo-grid { columns: 1; } }
 </style>
@@ -176,8 +106,8 @@
   var expiryDate = urlParams.get('expiry');
 
   var packages = [
-    { id: 'spark', name: 'Spark Pack', price: '$111', desc: '5 edited photos', limit: 5, stripeLink: 'https://buy.stripe.com/test_5kQeVd65aaHIa0x0PbcEw00' },
-    { id: 'portal', name: 'Full Portal', price: '$222', desc: '10 edited photos', limit: 10, stripeLink: 'https://buy.stripe.com/test_6oU9AT3X21783C941ncEw01' }
+    { id: 'spark', name: 'Spark Pack', price: '$111', desc: '5 edited photos', limit: 5, stripeLink: 'https://buy.stripe.com/8x23cvdsygHparP3nN5AQ01' },
+    { id: 'portal', name: 'Full Portal', price: '$222', desc: '10 edited photos', limit: 10, stripeLink: 'https://buy.stripe.com/aFaeVd6064YH7fD8I75AQ00' }
   ];
 
   var selectedPackage = null;
@@ -263,7 +193,6 @@
         '<p class="purchase-note">Secure payment via Stripe · Full resolution delivered after purchase</p>' +
       '</div>';
 
-    // Disable right click on all images
     document.querySelectorAll('.photo-item img').forEach(function(img) {
       img.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     });
@@ -272,17 +201,13 @@
   function selectPackage(id) {
     selectedPackage = packages.find(function(p) { return p.id === id; });
     selectedPhotos = [];
-
     packages.forEach(function(p) {
       document.getElementById('pkg-' + p.id).classList.remove('selected');
     });
     document.getElementById('pkg-' + id).classList.add('selected');
-
-    // Reset all photo states
     document.querySelectorAll('.photo-item').forEach(function(item) {
       item.classList.remove('photo-selected', 'photo-dimmed');
     });
-
     document.getElementById('selectionInstructions').style.display = 'block';
     updateCounter();
     updatePurchaseButton();
@@ -290,10 +215,8 @@
 
   function togglePhoto(index) {
     if (!selectedPackage) return;
-
     var item = document.getElementById('photo-' + index);
     var isSelected = item.classList.contains('photo-selected');
-
     if (isSelected) {
       item.classList.remove('photo-selected');
       selectedPhotos = selectedPhotos.filter(function(i) { return i !== index; });
@@ -302,54 +225,42 @@
       item.classList.add('photo-selected');
       selectedPhotos.push(index);
     }
-
-    // Dim unselected photos when limit reached
     var limitReached = selectedPhotos.length >= selectedPackage.limit;
-    document.querySelectorAll('.photo-item').forEach(function(item, i) {
+    document.querySelectorAll('.photo-item').forEach(function(item) {
       if (!item.classList.contains('photo-selected')) {
-        if (limitReached) {
-          item.classList.add('photo-dimmed');
-        } else {
-          item.classList.remove('photo-dimmed');
-        }
+        if (limitReached) { item.classList.add('photo-dimmed'); }
+        else { item.classList.remove('photo-dimmed'); }
       }
     });
-
     updateCounter();
     updatePurchaseButton();
   }
 
   function updateCounter() {
     if (!selectedPackage) return;
-    var counter = document.getElementById('selectionCounter');
-    counter.textContent = selectedPhotos.length + ' of ' + selectedPackage.limit + ' selected';
+    document.getElementById('selectionCounter').textContent = selectedPhotos.length + ' of ' + selectedPackage.limit + ' selected';
   }
 
   function updatePurchaseButton() {
+    if (!selectedPackage) return;
     var btn = document.getElementById('purchaseBtn');
     var summary = document.getElementById('purchaseSummary');
-    if (!selectedPackage) return;
-
     if (selectedPhotos.length === selectedPackage.limit) {
       btn.disabled = false;
       summary.textContent = selectedPackage.name + ' · ' + selectedPackage.price + ' · ' + selectedPhotos.length + ' photos selected';
     } else {
       btn.disabled = true;
-      summary.textContent = 'Select ' + (selectedPackage.limit - selectedPhotos.length) + ' more photo' + (selectedPackage.limit - selectedPhotos.length !== 1 ? 's' : '') + ' to continue';
+      var remaining = selectedPackage.limit - selectedPhotos.length;
+      summary.textContent = 'Select ' + remaining + ' more photo' + (remaining !== 1 ? 's' : '') + ' to continue';
     }
   }
 
   function handlePurchase() {
     if (!selectedPackage || selectedPhotos.length !== selectedPackage.limit) return;
-
     var selectedNames = selectedPhotos.map(function(i) {
       return galleryPhotos[i].publicId;
     }).join(', ');
-
-    var stripeUrl = selectedPackage.stripeLink +
-      '?prefilled_email=' + encodeURIComponent(clientEmail) +
-      '&client_reference_id=' + encodeURIComponent(clientFolder + '|' + selectedNames);
-
+    var stripeUrl = selectedPackage.stripeLink + '?prefilled_email=' + encodeURIComponent(clientEmail) + '&client_reference_id=' + encodeURIComponent(clientFolder + '|' + selectedNames);
     window.location.href = stripeUrl;
   }
 
@@ -395,8 +306,6 @@
       if (e.key === 'Escape') closeLightbox();
     }
   });
-
-  // Disable right click globally
   document.addEventListener('contextmenu', function(e) {
     if (e.target.tagName === 'IMG') e.preventDefault();
   });
