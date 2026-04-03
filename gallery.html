@@ -53,21 +53,20 @@
   .download-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.92); color: var(--black); font-family: 'Jost', sans-serif; font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 6px 12px; text-decoration: none; opacity: 0; transition: opacity 0.2s ease; border: none; cursor: pointer; }
   .download-item:hover .download-btn { opacity: 1; }
 
-  /* EXPIRY NOTICE */
-  .expiry-banner { background: #FAFAFA; border: 1px solid var(--border); border-left: 3px solid var(--black); padding: 1rem 1.5rem; margin: 0 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-  .expiry-banner-text { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--black); }
-  .expiry-banner-days { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--black); white-space: nowrap; }
+  /* EXPIRY BANNER — compact centered */
+  .expiry-banner-wrap { text-align: center; padding: 0 1.5rem 2rem; }
+  .expiry-banner { display: inline-flex; align-items: center; gap: 0.75rem; background: #FAFAFA; border: 1px solid var(--border); border-left: 3px solid var(--black); padding: 0.85rem 1.25rem; }
   .expiry-banner.warning { border-left-color: #cc4444; }
+  .expiry-banner-text { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--black); }
   .expiry-banner.warning .expiry-banner-text { color: #cc4444; }
+  .expiry-banner-days { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--black); white-space: nowrap; }
   .expiry-banner.warning .expiry-banner-days { color: #cc4444; }
 
-  /* DOWNLOAD ALL */
   .download-all-section { text-align: center; padding: 2rem 1.5rem; border-top: 1px solid var(--border); margin-top: 2rem; }
   .download-all-btn { display: inline-block; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white); background: rgba(10,10,10,0.8); border: none; padding: 1rem 3rem; cursor: pointer; transition: background 0.2s ease; }
   .download-all-btn:hover { background: rgba(10,10,10,0.95); }
   .download-all-btn:disabled { background: rgba(10,10,10,0.3); cursor: default; }
   .download-all-note { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #BBBBBB; margin-top: 0.75rem; }
-
   .purchase-section { padding: 2.5rem 1.5rem; text-align: center; border-top: 1px solid var(--border); margin-top: 2rem; }
   .purchase-summary { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 2rem; line-height: 2; }
   .purchase-btn { display: inline-block; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white); background: rgba(10,10,10,0.8); border: none; padding: 1rem 3rem; cursor: pointer; transition: background 0.2s ease; }
@@ -88,7 +87,7 @@
   .lightbox-arrow:hover { color: white; }
   .lightbox-arrow.prev { left: 1rem; }
   .lightbox-arrow.next { right: 1rem; }
-  @media (max-width: 768px) { .photo-grid { columns: 2; } .packages { flex-direction: column; } .expiry-banner { flex-direction: column; text-align: center; } }
+  @media (max-width: 768px) { .photo-grid { columns: 2; } .packages { flex-direction: column; } }
   @media (max-width: 480px) { .photo-grid { columns: 1; } }
 </style>
 </head>
@@ -142,9 +141,11 @@
     var isWarning = days <= 7;
     var cls = isWarning ? 'expiry-banner warning' : 'expiry-banner';
     var msg = isWarning ? 'Download soon — this gallery expires in' : 'This gallery is available for';
-    return '<div class="' + cls + '">' +
-      '<span class="expiry-banner-text">' + msg + '</span>' +
-      '<span class="expiry-banner-days">' + days + ' day' + (days !== 1 ? 's' : '') + '</span>' +
+    return '<div class="expiry-banner-wrap">' +
+      '<div class="' + cls + '">' +
+        '<span class="expiry-banner-text">' + msg + '</span>' +
+        '<span class="expiry-banner-days">' + days + ' day' + (days !== 1 ? 's' : '') + '</span>' +
+      '</div>' +
     '</div>';
   }
 
@@ -258,18 +259,15 @@
     btn.disabled = true;
     btn.textContent = 'Preparing your photos...';
     note.textContent = 'Please wait — this may take a moment';
-
     try {
       var zip = new JSZip();
       var folder = zip.folder(zipName);
-
       await Promise.all(galleryPhotos.map(async function(photo, i) {
         var response = await fetch(photo.fullUrl);
         var blob = await response.blob();
         var ext = photo.fullUrl.split('.').pop().split('?')[0] || 'jpg';
         folder.file('photo-' + (i + 1) + '.' + ext, blob);
       }));
-
       var content = await zip.generateAsync({ type: 'blob' });
       var url = URL.createObjectURL(content);
       var a = document.createElement('a');
@@ -279,7 +277,6 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
       btn.disabled = false;
       btn.textContent = 'Download All Photos';
       note.textContent = 'Download complete — check your downloads folder';
