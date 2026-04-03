@@ -14,16 +14,17 @@
   .site-slogan { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 0.75rem; color: var(--gray); display: block; }
   .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; }
   .loading-text { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gray); }
-  .error-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; text-align: center; padding: 2rem; }
+  .error-state, .editing-state, .expired-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1.5rem; text-align: center; padding: 3rem 2rem; }
   .error-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.8rem; color: var(--black); }
-  .error-sub { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2; }
-  .back-link { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 2px; margin-top: 1rem; display: inline-block; transition: color 0.2s ease; }
+  .error-sub { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2; max-width: 400px; }
+  .back-link { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 2px; display: inline-block; transition: color 0.2s ease; }
   .back-link:hover { color: var(--black); }
+  .editing-divider { width: 40px; height: 1px; background: var(--border); }
   .gallery-hero { padding: 3rem 2rem 1.5rem; text-align: center; }
   .gallery-greeting { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 1.8rem; color: var(--black); margin-bottom: 0.5rem; }
   .gallery-sub { font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gray); line-height: 2; }
   .packages { display: flex; gap: 1px; margin: 2rem 1.5rem; background: var(--border); border: 1px solid var(--border); }
-  .package { flex: 1; background: var(--white); padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
+  .package { flex: 1; background: var(--white); padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s ease; }
   .package:hover { background: #F5F5F5; }
   .package.selected { background: rgba(10,10,10,0.85); }
   .package-name { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--black); margin-bottom: 0.4rem; display: block; transition: color 0.2s ease; }
@@ -39,6 +40,8 @@
   .gallery-label { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gray); text-align: center; padding: 1rem 0 0.5rem; }
   .gallery-note { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #BBBBBB; text-align: center; margin-bottom: 1.5rem; }
   .photo-grid { columns: 3; column-gap: 6px; padding: 0 1.5rem; }
+
+  /* PREVIEW PHOTOS — watermarked, no download */
   .photo-item { break-inside: avoid; margin-bottom: 6px; position: relative; overflow: hidden; cursor: pointer; transition: opacity 0.2s ease; }
   .photo-item img { width: 100%; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
   .photo-item:hover { opacity: 0.92; }
@@ -48,17 +51,17 @@
   .checkmark { display: none; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: var(--white); border-radius: 50%; align-items: center; justify-content: center; z-index: 4; pointer-events: none; font-size: 12px; }
   .photo-item.photo-dimmed { opacity: 0.4; cursor: not-allowed; }
 
-  /* DOWNLOAD GRID — no watermark, with download button */
+  /* DELIVERED PHOTOS — no watermark, with download */
   .download-item { break-inside: avoid; margin-bottom: 6px; position: relative; overflow: hidden; }
   .download-item img { width: 100%; display: block; }
-  .download-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); color: var(--black); font-family: 'Jost', sans-serif; font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 10px; text-decoration: none; opacity: 0; transition: opacity 0.2s ease; }
+  .download-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.92); color: var(--black); font-family: 'Jost', sans-serif; font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 6px 12px; text-decoration: none; opacity: 0; transition: opacity 0.2s ease; border: none; cursor: pointer; }
   .download-item:hover .download-btn { opacity: 1; }
 
-  /* EDITING STATE */
-  .editing-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 1.5rem; text-align: center; padding: 3rem 2rem; }
-  .editing-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 2rem; color: var(--black); }
-  .editing-sub { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2.2; max-width: 400px; }
-  .editing-divider { width: 40px; height: 1px; background: var(--border); }
+  /* DOWNLOAD ALL BUTTON */
+  .download-all-section { text-align: center; padding: 2rem 1.5rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+  .download-all-btn { display: inline-block; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white); background: rgba(10,10,10,0.8); border: none; padding: 1rem 3rem; cursor: pointer; transition: background 0.2s ease; text-decoration: none; }
+  .download-all-btn:hover { background: rgba(10,10,10,0.95); }
+  .download-all-note { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #BBBBBB; margin-top: 0.75rem; }
 
   .purchase-section { padding: 2.5rem 1.5rem; text-align: center; border-top: 1px solid var(--border); margin-top: 2rem; }
   .purchase-summary { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 2rem; line-height: 2; }
@@ -69,21 +72,18 @@
   .free-note { background: #FAFAFA; border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin: 0 1.5rem 2rem; text-align: center; }
   .free-note-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.95rem; color: var(--gray); }
   .expiry-note { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray); text-align: center; margin-bottom: 2rem; }
-  .expired-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; text-align: center; padding: 2rem; }
-  .expired-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.8rem; color: var(--black); }
-  .expired-sub { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2; }
   footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; }
   .footer-copy { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: #CCCCCC; }
   .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
   .lightbox.open { opacity: 1; pointer-events: all; }
-  .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; display: block; pointer-events: none; }
   .lightbox-close { position: fixed; top: 1.5rem; right: 1.5rem; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; font-family: 'Jost', sans-serif; transition: color 0.2s ease; }
   .lightbox-close:hover { color: white; }
   .lightbox-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 1rem; font-size: 1.5rem; transition: color 0.2s ease; }
   .lightbox-arrow:hover { color: white; }
   .lightbox-arrow.prev { left: 1rem; }
   .lightbox-arrow.next { right: 1rem; }
-  @media (max-width: 768px) { .photo-grid { columns: 2; } .packages { flex-direction: column; gap: 1px; } }
+  @media (max-width: 768px) { .photo-grid { columns: 2; } .packages { flex-direction: column; } }
   @media (max-width: 480px) { .photo-grid { columns: 1; } }
 </style>
 </head>
@@ -131,62 +131,43 @@
 
   async function loadGallery() {
     if (!clientEmail || !clientFolder) { showError(); return; }
+    if (expiryDate && new Date() > new Date(expiryDate)) { showExpired(); return; }
 
-    if (expiryDate) {
-      if (new Date() > new Date(expiryDate)) { showExpired(); return; }
-    }
+    if (galleryState === 'editing') { showEditing(); return; }
 
-    // STATE: editing — photos purchased, being edited
-    if (galleryState === 'editing') {
-      showEditing();
-      return;
-    }
-
-    // STATE: delivered — show edited photos with download
     if (galleryState === 'delivered') {
       try {
-        var response = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/edited'));
-        var data = await response.json();
-        if (!data.photos || data.photos.length === 0) {
-          showEditing();
-          return;
-        }
-        galleryPhotos = data.photos;
+        var r = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/edited'));
+        var d = await r.json();
+        if (!d.photos || d.photos.length === 0) { showEditing(); return; }
+        galleryPhotos = d.photos;
         renderDeliveredGallery(clientName, galleryPhotos);
-      } catch(err) {
-        showEditing();
-      }
+      } catch(e) { showEditing(); }
       return;
     }
 
-    // STATE: preview — default, show watermarked previews for selection
+    // Default: preview state
     try {
-      var response = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/previews'));
-      var data = await response.json();
-      if (!data.photos || data.photos.length === 0) {
-        // fallback — try root folder
+      var r = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/previews'));
+      var d = await r.json();
+      if (!d.photos || d.photos.length === 0) {
         var r2 = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder));
         var d2 = await r2.json();
         if (!d2.photos || d2.photos.length === 0) { showError(); return; }
         galleryPhotos = d2.photos;
       } else {
-        galleryPhotos = data.photos;
+        galleryPhotos = d.photos;
       }
       renderPreviewGallery(clientName, galleryPhotos);
-    } catch(err) {
-      showError();
-    }
+    } catch(e) { showError(); }
   }
 
-  // PREVIEW GALLERY — watermarked, selectable
   function renderPreviewGallery(name, photos) {
     var daysLeft = '';
     if (expiryDate) {
-      var diff = new Date(expiryDate) - new Date();
-      var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      var days = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
       daysLeft = '<p class="expiry-note">Your gallery is available for ' + days + ' more day' + (days !== 1 ? 's' : '') + '.</p>';
     }
-
     document.getElementById('app').innerHTML =
       '<div class="gallery-hero">' +
         '<p class="gallery-greeting">Hello, ' + name + '.</p>' +
@@ -223,21 +204,19 @@
         '<button class="purchase-btn" id="purchaseBtn" disabled onclick="handlePurchase()">Purchase Collection</button>' +
         '<p class="purchase-note">Secure payment via Stripe · Full resolution delivered after purchase</p>' +
       '</div>';
-
     document.querySelectorAll('.photo-item img').forEach(function(img) {
       img.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     });
   }
 
-  // DELIVERED GALLERY — full resolution, downloadable
   function renderDeliveredGallery(name, photos) {
     document.getElementById('app').innerHTML =
       '<div class="gallery-hero">' +
         '<p class="gallery-greeting">Hello, ' + name + '.</p>' +
-        '<p class="gallery-sub">Your edited photos are ready.<br>Download them and keep them forever.</p>' +
+        '<p class="gallery-sub">Your edited photos are ready.<br>They are yours forever — download and keep them.</p>' +
       '</div>' +
       '<p class="gallery-label">Your Collection</p>' +
-      '<p class="gallery-note" style="margin-bottom:1.5rem">Full resolution · Hover to download</p>' +
+      '<p class="gallery-note">Full resolution · Hover each photo to download individually</p>' +
       '<div class="photo-grid">' +
         photos.map(function(photo, i) {
           return '<div class="download-item">' +
@@ -245,18 +224,52 @@
             '<a class="download-btn" href="' + photo.fullUrl + '" download target="_blank">Download</a>' +
           '</div>';
         }).join('') +
+      '</div>' +
+      '<div class="download-all-section">' +
+        '<p style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:1rem;color:var(--gray);margin-bottom:1.5rem">Download your entire collection at once</p>' +
+        photos.map(function(photo, i) {
+          return '<a href="' + photo.fullUrl + '" download target="_blank" style="display:none" id="dl-' + i + '"></a>';
+        }).join('') +
+        '<button class="download-all-btn" onclick="downloadAll()">Download All Photos</button>' +
+        '<p class="download-all-note">Photos will download one by one to your device</p>' +
       '</div>';
   }
 
-  // EDITING STATE
+  function downloadAll() {
+    galleryPhotos.forEach(function(photo, i) {
+      setTimeout(function() {
+        var link = document.getElementById('dl-' + i);
+        if (link) link.click();
+      }, i * 800);
+    });
+  }
+
   function showEditing() {
     document.getElementById('app').innerHTML =
       '<div class="editing-state">' +
-        '<p class="gallery-greeting" style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:2rem">Hello, ' + clientName + '.</p>' +
+        '<p class="gallery-greeting">Hello, ' + clientName + '.</p>' +
         '<div class="editing-divider"></div>' +
-        '<p class="editing-title" style="font-size:1.3rem">Your photos are being edited.</p>' +
-        '<p class="editing-sub">Each photo is being prepared with the same care and intention as the moment itself.<br>You will receive an email when your collection is ready.</p>' +
-        '<a href="mailto:portalmoments@gmail.com" class="back-link" style="margin-top:1rem">Contact Anna</a>' +
+        '<p style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:1.4rem;color:var(--black)">Your photos are being edited.</p>' +
+        '<p class="error-sub">Each photo is being prepared with the same care as the moment itself.<br>You will receive an email when your collection is ready.</p>' +
+        '<a href="mailto:portalmoments@gmail.com" class="back-link">Contact Anna</a>' +
+      '</div>';
+  }
+
+  function showError() {
+    document.getElementById('app').innerHTML =
+      '<div class="error-state">' +
+        '<p class="error-title">Portal not found.</p>' +
+        '<p class="error-sub">We couldn\'t find a gallery for this email address.<br>Please check your email or contact us directly.</p>' +
+        '<a href="/" class="back-link">← Return to Portal Moments</a>' +
+      '</div>';
+  }
+
+  function showExpired() {
+    document.getElementById('app').innerHTML =
+      '<div class="expired-state">' +
+        '<p class="error-title">This portal has expired.</p>' +
+        '<p class="error-sub">Your gallery was available for 30 days.<br>Please contact us if you need more time.</p>' +
+        '<a href="mailto:portalmoments@gmail.com" class="back-link">Contact Anna</a>' +
       '</div>';
   }
 
@@ -286,8 +299,7 @@
     var limitReached = selectedPhotos.length >= selectedPackage.limit;
     document.querySelectorAll('.photo-item').forEach(function(item) {
       if (!item.classList.contains('photo-selected')) {
-        if (limitReached) { item.classList.add('photo-dimmed'); }
-        else { item.classList.remove('photo-dimmed'); }
+        limitReached ? item.classList.add('photo-dimmed') : item.classList.remove('photo-dimmed');
       }
     });
     updateCounter();
@@ -307,35 +319,16 @@
       btn.disabled = false;
       summary.textContent = selectedPackage.name + ' · ' + selectedPackage.price + ' · ' + selectedPhotos.length + ' photos selected';
     } else {
-      var remaining = selectedPackage.limit - selectedPhotos.length;
+      var rem = selectedPackage.limit - selectedPhotos.length;
       btn.disabled = true;
-      summary.textContent = 'Select ' + remaining + ' more photo' + (remaining !== 1 ? 's' : '') + ' to continue';
+      summary.textContent = 'Select ' + rem + ' more photo' + (rem !== 1 ? 's' : '') + ' to continue';
     }
   }
 
   function handlePurchase() {
     if (!selectedPackage || selectedPhotos.length !== selectedPackage.limit) return;
-    var selectedNames = selectedPhotos.map(function(i) { return galleryPhotos[i].publicId; }).join(', ');
-    var stripeUrl = selectedPackage.stripeLink + '?prefilled_email=' + encodeURIComponent(clientEmail) + '&client_reference_id=' + encodeURIComponent(clientFolder + '|' + selectedNames);
-    window.location.href = stripeUrl;
-  }
-
-  function showError() {
-    document.getElementById('app').innerHTML =
-      '<div class="error-state">' +
-        '<p class="error-title">Portal not found.</p>' +
-        '<p class="error-sub">We couldn\'t find a gallery for this email address.<br>Please check your email or contact us directly.</p>' +
-        '<a href="/" class="back-link">← Return to Portal Moments</a>' +
-      '</div>';
-  }
-
-  function showExpired() {
-    document.getElementById('app').innerHTML =
-      '<div class="expired-state">' +
-        '<p class="error-title">This portal has expired.</p>' +
-        '<p class="error-sub">Your gallery was available for 30 days.<br>Please contact us if you need more time.</p>' +
-        '<a href="mailto:portalmoments@gmail.com" class="back-link">Contact Anna</a>' +
-      '</div>';
+    var names = selectedPhotos.map(function(i) { return galleryPhotos[i].publicId; }).join(', ');
+    window.location.href = selectedPackage.stripeLink + '?prefilled_email=' + encodeURIComponent(clientEmail) + '&client_reference_id=' + encodeURIComponent(clientFolder + '|' + names);
   }
 
   function openLightbox(index) {
