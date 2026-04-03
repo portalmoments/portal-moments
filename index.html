@@ -25,7 +25,6 @@
   .grid-item img { width: 100%; display: block; transition: opacity 0.3s ease; }
   .grid-item:hover img { opacity: 0.88; }
 
-  /* COLOR PLACEHOLDER — fades out when photo loads */
   .grid-item::before { content: ''; position: absolute; inset: 0; z-index: 1; transition: opacity 0.6s ease; }
   .grid-item.loaded::before { opacity: 0; pointer-events: none; }
 
@@ -53,6 +52,9 @@
   .grid-item:nth-child(22)::before { background: #453040; }
   .grid-item:nth-child(23)::before { background: #304535; }
   .grid-item:nth-child(24)::before { background: #3a4030; }
+  .grid-item:nth-child(25)::before { background: #354535; }
+  .grid-item:nth-child(26)::before { background: #403530; }
+  .grid-item:nth-child(27)::before { background: #304040; }
 
   footer { border-top: 1px solid var(--border); padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
   .footer-instagram { display: flex; align-items: center; justify-content: center; color: var(--gray); text-decoration: none; transition: color 0.2s ease; }
@@ -72,7 +74,8 @@
   .lightbox-arrow.next { right: 1rem; }
   .lightbox-counter { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); font-family: 'Jost', sans-serif; font-weight: 300; }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.97); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  /* MODAL — opacity lowered to 0.75 so portfolio photos show through */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.75); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
   .modal { max-width: 360px; width: 90%; text-align: center; transform: translateY(10px); transition: transform 0.3s ease; }
   .modal-overlay.open .modal { transform: translateY(0); }
@@ -81,8 +84,11 @@
   .modal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.9rem; color: var(--black); text-align: center; letter-spacing: 0.05em; outline: none; transition: border-color 0.2s ease; margin-bottom: 2rem; }
   .modal-input::placeholder { color: #CCCCCC; }
   .modal-input:focus { border-color: var(--black); }
-  .modal-btn { width: 100%; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: white; background: var(--black); border: none; padding: 0.9rem 2rem; cursor: pointer; transition: background 0.2s ease; margin-bottom: 1.5rem; }
-  .modal-btn:hover { background: #333; }
+
+  /* SOFTENED BUTTON */
+  .modal-btn { width: 100%; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: white; background: rgba(10,10,10,0.8); border: none; padding: 0.9rem 2rem; cursor: pointer; transition: background 0.2s ease; margin-bottom: 1.5rem; }
+  .modal-btn:hover { background: rgba(10,10,10,0.95); }
+
   .modal-error { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #cc4444; margin-bottom: 1rem; display: none; }
   .modal-close { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; transition: color 0.2s ease; }
   .modal-close:hover { color: var(--black); }
@@ -129,7 +135,7 @@
       <div class="grid-item" onclick="openLightbox(22)"><img src="./images/photo23.jpg" alt="Portal Moment" onload="this.parentElement.classList.add('loaded')" /></div>
       <div class="grid-item" onclick="openLightbox(23)"><img src="./images/photo24.jpg" alt="Portal Moment" onload="this.parentElement.classList.add('loaded')" /></div>
       <div class="grid-item" onclick="openLightbox(24)"><img src="./images/photo25.jpg" alt="Portal Moment" onload="this.parentElement.classList.add('loaded')" /></div>
-      <div class="grid-item" onclick="openLightbox(25)"><img src="./images/photo26.jpg" alt="Portal Moment" onload="this.parentElement.classList.add('loaded')" /></div> 
+      <div class="grid-item" onclick="openLightbox(25)"><img src="./images/photo26.jpg" alt="Portal Moment" onload="this.parentElement.classList.add('loaded')" /></div>
       <div class="grid-item" onclick="openLightbox(26)"><img src="./images/photo27.jpg" alt="Portal Moment" onload="this.parentElement.classList.add('loaded')" /></div>
     </div>
   </div>
@@ -172,7 +178,6 @@
     return Array.from(document.querySelectorAll('.grid-item img')).map(img => img.src);
   }
 
-  // Reverse grid order so newest photos appear first
   window.addEventListener('load', function() {
     const grid = document.getElementById('photoGrid');
     const items = Array.from(grid.children);
