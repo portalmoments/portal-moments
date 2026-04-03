@@ -32,8 +32,6 @@
   .package.selected .package-price { color: var(--white); }
   .package-desc { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); display: block; transition: color 0.2s ease; }
   .package.selected .package-desc { color: rgba(255,255,255,0.6); }
-  .package-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--black); color: var(--white); font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 3px 10px; white-space: nowrap; }
-  .package.selected .package-badge { background: var(--white); color: var(--black); }
   .gallery-label { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gray); text-align: center; padding: 1rem 0 0.5rem; }
   .gallery-note { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #BBBBBB; text-align: center; margin-bottom: 1.5rem; }
   .photo-grid { columns: 3; column-gap: 6px; padding: 0 1.5rem; }
@@ -49,6 +47,10 @@
   .purchase-note { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #BBBBBB; margin-top: 1rem; }
   .free-note { background: #FAFAFA; border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin: 0 1.5rem 2rem; text-align: center; }
   .free-note-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.95rem; color: var(--gray); }
+  .expiry-note { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gray); text-align: center; margin-bottom: 2rem; }
+  .expired-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; text-align: center; padding: 2rem; }
+  .expired-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.8rem; color: var(--black); }
+  .expired-sub { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2; }
   footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; }
   .footer-copy { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: #CCCCCC; }
   .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
@@ -89,38 +91,61 @@
 </div>
 
 <script>
-  const CLOUD_NAME = 'dhmwbcjag';
-  const BASE_URL = 'https://res.cloudinary.com/' + CLOUD_NAME + '/image/upload';
+  var urlParams = new URLSearchParams(window.location.search);
+  var clientEmail = urlParams.get('email');
+  var clientFolder = urlParams.get('folder');
+  var clientName = urlParams.get('name') || 'You';
+  var expiryDate = urlParams.get('expiry');
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const clientEmail = urlParams.get('email');
-  const clientFolder = urlParams.get('folder');
+  var packages = [
+    { id: 'spark', name: 'Spark Pack', price: '$111', desc: '5 edited photos', stripeLink: 'https://buy.stripe.com/test_5kQeVd65aaHIa0x0PbcEw00' },
+    { id: 'portal', name: 'Full Portal', price: '$222', desc: '10 edited photos', stripeLink: 'https://buy.stripe.com/test_6oU9AT3X21783C941ncEw01' }
+  ];
 
-  
+  var selectedPackage = null;
+  var lightboxIndex = 0;
+  var galleryPhotos = [];
 
-  let selectedPackage = null;
-  let lightboxIndex = 0;
-  let galleryPhotos = [];
-
- function loadGallery() {
-    if (!clientEmail) {
+  async function loadGallery() {
+    if (!clientEmail || !clientFolder) {
       showError();
       return;
     }
 
-    const folder = clientFolder || 'test-client';
-    const name = urlParams.get('name') || 'Anna';
-    const filenames = ['photo1_jf7qst', 'photo2_k1wnb8', 'photo3_jjq4li'];
+    if (expiryDate) {
+      var expiry = new Date(expiryDate);
+      var now = new Date();
+      if (now > expiry) {
+        showExpired();
+        return;
+      }
+    }
 
-    galleryPhotos = filenames.map(function(f) {
-      return BASE_URL + '/w_800,q_70/clients/' + folder + '/' + f + '.jpg';
-    });
+    try {
+      var response = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder));
+      var data = await response.json();
 
-    renderGallery(name, galleryPhotos);
+      if (!data.photos || data.photos.length === 0) {
+        showError();
+        return;
+      }
+
+      galleryPhotos = data.photos.map(function(p) { return p.url; });
+      renderGallery(clientName, galleryPhotos);
+
+    } catch (err) {
+      showError();
+    }
   }
 
-
   function renderGallery(name, photos) {
+    var daysLeft = '';
+    if (expiryDate) {
+      var diff = new Date(expiryDate) - new Date();
+      var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      daysLeft = '<p class="expiry-note">Your gallery is available for ' + days + ' more day' + (days !== 1 ? 's' : '') + ' — download before it expires.</p>';
+    }
+
     document.getElementById('app').innerHTML =
       '<div class="gallery-hero">' +
         '<p class="gallery-greeting">Hello, ' + name + '.</p>' +
@@ -129,10 +154,10 @@
       '<div class="free-note">' +
         '<p class="free-note-text">Your complimentary photo has already been sent to your email.</p>' +
       '</div>' +
+      daysLeft +
       '<div class="packages">' +
         packages.map(function(pkg) {
           return '<div class="package" id="pkg-' + pkg.id + '" onclick="selectPackage(\'' + pkg.id + '\')">' +
-            (pkg.badge ? '<span class="package-badge">' + pkg.badge + '</span>' : '') +
             '<span class="package-name">' + pkg.name + '</span>' +
             '<span class="package-price">' + pkg.price + '</span>' +
             '<span class="package-desc">' + pkg.desc + '</span>' +
@@ -176,6 +201,15 @@
         '<p class="error-title">Portal not found.</p>' +
         '<p class="error-sub">We couldn\'t find a gallery for this email address.<br>Please check your email or contact us directly.</p>' +
         '<a href="/" class="back-link">← Return to Portal Moments</a>' +
+      '</div>';
+  }
+
+  function showExpired() {
+    document.getElementById('app').innerHTML =
+      '<div class="expired-state">' +
+        '<p class="expired-title">This portal has expired.</p>' +
+        '<p class="expired-sub">Your gallery was available for 30 days.<br>Please contact us if you need more time.</p>' +
+        '<a href="mailto:portalmoments@gmail.com" class="back-link">Contact Anna</a>' +
       '</div>';
   }
 
