@@ -47,6 +47,19 @@
   .photo-item.photo-selected .checkmark { display: flex; }
   .checkmark { display: none; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: var(--white); border-radius: 50%; align-items: center; justify-content: center; z-index: 4; pointer-events: none; font-size: 12px; }
   .photo-item.photo-dimmed { opacity: 0.4; cursor: not-allowed; }
+
+  /* DOWNLOAD GRID — no watermark, with download button */
+  .download-item { break-inside: avoid; margin-bottom: 6px; position: relative; overflow: hidden; }
+  .download-item img { width: 100%; display: block; }
+  .download-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); color: var(--black); font-family: 'Jost', sans-serif; font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 10px; text-decoration: none; opacity: 0; transition: opacity 0.2s ease; }
+  .download-item:hover .download-btn { opacity: 1; }
+
+  /* EDITING STATE */
+  .editing-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 1.5rem; text-align: center; padding: 3rem 2rem; }
+  .editing-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 2rem; color: var(--black); }
+  .editing-sub { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); line-height: 2.2; max-width: 400px; }
+  .editing-divider { width: 40px; height: 1px; background: var(--border); }
+
   .purchase-section { padding: 2.5rem 1.5rem; text-align: center; border-top: 1px solid var(--border); margin-top: 2rem; }
   .purchase-summary { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 2rem; line-height: 2; }
   .purchase-btn { display: inline-block; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--white); background: rgba(10,10,10,0.8); border: none; padding: 1rem 3rem; cursor: pointer; transition: background 0.2s ease; }
@@ -104,6 +117,7 @@
   var clientFolder = urlParams.get('folder');
   var clientName = urlParams.get('name') || 'You';
   var expiryDate = urlParams.get('expiry');
+  var galleryState = urlParams.get('state') || 'preview';
 
   var packages = [
     { id: 'spark', name: 'Spark Pack', price: '$111', desc: '5 edited photos', limit: 5, stripeLink: 'https://buy.stripe.com/8x23cvdsygHparP3nN5AQ01' },
@@ -116,37 +130,56 @@
   var galleryPhotos = [];
 
   async function loadGallery() {
-    if (!clientEmail || !clientFolder) {
-      showError();
+    if (!clientEmail || !clientFolder) { showError(); return; }
+
+    if (expiryDate) {
+      if (new Date() > new Date(expiryDate)) { showExpired(); return; }
+    }
+
+    // STATE: editing — photos purchased, being edited
+    if (galleryState === 'editing') {
+      showEditing();
       return;
     }
 
-    if (expiryDate) {
-      var expiry = new Date(expiryDate);
-      if (new Date() > expiry) {
-        showExpired();
-        return;
+    // STATE: delivered — show edited photos with download
+    if (galleryState === 'delivered') {
+      try {
+        var response = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/edited'));
+        var data = await response.json();
+        if (!data.photos || data.photos.length === 0) {
+          showEditing();
+          return;
+        }
+        galleryPhotos = data.photos;
+        renderDeliveredGallery(clientName, galleryPhotos);
+      } catch(err) {
+        showEditing();
       }
+      return;
     }
 
+    // STATE: preview — default, show watermarked previews for selection
     try {
-      var response = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder));
+      var response = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/previews'));
       var data = await response.json();
-
       if (!data.photos || data.photos.length === 0) {
-        showError();
-        return;
+        // fallback — try root folder
+        var r2 = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder));
+        var d2 = await r2.json();
+        if (!d2.photos || d2.photos.length === 0) { showError(); return; }
+        galleryPhotos = d2.photos;
+      } else {
+        galleryPhotos = data.photos;
       }
-
-      galleryPhotos = data.photos;
-      renderGallery(clientName, galleryPhotos);
-
-    } catch (err) {
+      renderPreviewGallery(clientName, galleryPhotos);
+    } catch(err) {
       showError();
     }
   }
 
-  function renderGallery(name, photos) {
+  // PREVIEW GALLERY — watermarked, selectable
+  function renderPreviewGallery(name, photos) {
     var daysLeft = '';
     if (expiryDate) {
       var diff = new Date(expiryDate) - new Date();
@@ -159,9 +192,7 @@
         '<p class="gallery-greeting">Hello, ' + name + '.</p>' +
         '<p class="gallery-sub">Your Portal Moment is ready.<br>Select a package, then choose your favourite photos.</p>' +
       '</div>' +
-      '<div class="free-note">' +
-        '<p class="free-note-text">Your complimentary photo has already been sent to your email.</p>' +
-      '</div>' +
+      '<div class="free-note"><p class="free-note-text">Your complimentary photo has already been sent to your email.</p></div>' +
       daysLeft +
       '<div class="packages">' +
         packages.map(function(pkg) {
@@ -198,16 +229,43 @@
     });
   }
 
+  // DELIVERED GALLERY — full resolution, downloadable
+  function renderDeliveredGallery(name, photos) {
+    document.getElementById('app').innerHTML =
+      '<div class="gallery-hero">' +
+        '<p class="gallery-greeting">Hello, ' + name + '.</p>' +
+        '<p class="gallery-sub">Your edited photos are ready.<br>Download them and keep them forever.</p>' +
+      '</div>' +
+      '<p class="gallery-label">Your Collection</p>' +
+      '<p class="gallery-note" style="margin-bottom:1.5rem">Full resolution · Hover to download</p>' +
+      '<div class="photo-grid">' +
+        photos.map(function(photo, i) {
+          return '<div class="download-item">' +
+            '<img src="' + photo.url + '" alt="Your Portal Moment" loading="lazy" />' +
+            '<a class="download-btn" href="' + photo.fullUrl + '" download target="_blank">Download</a>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+  }
+
+  // EDITING STATE
+  function showEditing() {
+    document.getElementById('app').innerHTML =
+      '<div class="editing-state">' +
+        '<p class="gallery-greeting" style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:2rem">Hello, ' + clientName + '.</p>' +
+        '<div class="editing-divider"></div>' +
+        '<p class="editing-title" style="font-size:1.3rem">Your photos are being edited.</p>' +
+        '<p class="editing-sub">Each photo is being prepared with the same care and intention as the moment itself.<br>You will receive an email when your collection is ready.</p>' +
+        '<a href="mailto:portalmoments@gmail.com" class="back-link" style="margin-top:1rem">Contact Anna</a>' +
+      '</div>';
+  }
+
   function selectPackage(id) {
     selectedPackage = packages.find(function(p) { return p.id === id; });
     selectedPhotos = [];
-    packages.forEach(function(p) {
-      document.getElementById('pkg-' + p.id).classList.remove('selected');
-    });
+    packages.forEach(function(p) { document.getElementById('pkg-' + p.id).classList.remove('selected'); });
     document.getElementById('pkg-' + id).classList.add('selected');
-    document.querySelectorAll('.photo-item').forEach(function(item) {
-      item.classList.remove('photo-selected', 'photo-dimmed');
-    });
+    document.querySelectorAll('.photo-item').forEach(function(item) { item.classList.remove('photo-selected', 'photo-dimmed'); });
     document.getElementById('selectionInstructions').style.display = 'block';
     updateCounter();
     updatePurchaseButton();
@@ -249,17 +307,15 @@
       btn.disabled = false;
       summary.textContent = selectedPackage.name + ' · ' + selectedPackage.price + ' · ' + selectedPhotos.length + ' photos selected';
     } else {
-      btn.disabled = true;
       var remaining = selectedPackage.limit - selectedPhotos.length;
+      btn.disabled = true;
       summary.textContent = 'Select ' + remaining + ' more photo' + (remaining !== 1 ? 's' : '') + ' to continue';
     }
   }
 
   function handlePurchase() {
     if (!selectedPackage || selectedPhotos.length !== selectedPackage.limit) return;
-    var selectedNames = selectedPhotos.map(function(i) {
-      return galleryPhotos[i].publicId;
-    }).join(', ');
+    var selectedNames = selectedPhotos.map(function(i) { return galleryPhotos[i].publicId; }).join(', ');
     var stripeUrl = selectedPackage.stripeLink + '?prefilled_email=' + encodeURIComponent(clientEmail) + '&client_reference_id=' + encodeURIComponent(clientFolder + '|' + selectedNames);
     window.location.href = stripeUrl;
   }
@@ -276,8 +332,8 @@
   function showExpired() {
     document.getElementById('app').innerHTML =
       '<div class="expired-state">' +
-        '<p class="expired-title">This portal has expired.</p>' +
-        '<p class="expired-sub">Your gallery was available for 30 days.<br>Please contact us if you need more time.</p>' +
+        '<p class="error-title">This portal has expired.</p>' +
+        '<p class="error-sub">Your gallery was available for 30 days.<br>Please contact us if you need more time.</p>' +
         '<a href="mailto:portalmoments@gmail.com" class="back-link">Contact Anna</a>' +
       '</div>';
   }
