@@ -23,7 +23,7 @@
   .admin-logo { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; }
   .admin-logout { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; transition: color 0.2s ease; }
   .admin-logout:hover { color: var(--black); }
-  .admin-body { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+  .admin-body { max-width: 1100px; margin: 0 auto; padding: 2rem; }
   .section-title { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
   .new-client-form { background: var(--white); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
@@ -33,8 +33,6 @@
   .form-input:focus { border-color: var(--black); }
   .form-btn { background: rgba(10,10,10,0.8); color: var(--white); border: none; padding: 0.8rem 2rem; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s ease; }
   .form-btn:hover { background: rgba(10,10,10,0.95); }
-  .form-btn.secondary { background: transparent; color: var(--black); border: 1px solid var(--border); }
-  .form-btn.secondary:hover { background: var(--light); }
   .form-actions { display: flex; gap: 0.75rem; align-items: center; }
   .success-msg { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #44aa66; display: none; }
   .clients-table { width: 100%; border-collapse: collapse; background: var(--white); }
@@ -43,14 +41,14 @@
   .clients-table tr:last-child td { border-bottom: none; }
   .clients-table tr:hover td { background: var(--light); }
   .badge { display: inline-block; font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; }
-  .badge-pending { background: #FFF8E6; color: #B8860B; }
   .badge-gallery { background: #E6F0FF; color: #1a5fb4; }
-  .badge-purchased { background: #E6F7ED; color: #2d6a4f; }
-  .badge-delivered { background: #F0F0F0; color: #666; }
+  .badge-purchased { background: #FFF8E6; color: #B8860B; }
+  .badge-editing { background: #F0E6FF; color: #6b3fb5; }
+  .badge-delivered { background: #E6F7ED; color: #2d6a4f; }
   .badge-expired { background: #FFEEEE; color: #cc4444; }
   .action-btn { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); background: none; border: 1px solid var(--border); padding: 4px 10px; cursor: pointer; transition: all 0.2s ease; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
   .action-btn:hover { background: var(--black); color: var(--white); border-color: var(--black); }
-  .action-btn.danger:hover { background: #cc4444; border-color: #cc4444; }
+  .action-btn.danger:hover { background: #cc4444; border-color: #cc4444; color: var(--white); }
   .gallery-url { font-size: 0.58rem; color: var(--gray); font-family: 'Jost', sans-serif; word-break: break-all; display: block; margin-bottom: 4px; }
   .copy-btn { font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; padding: 2px 6px; transition: color 0.2s ease; }
   .copy-btn:hover { color: var(--black); }
@@ -60,6 +58,7 @@
   .stat-card { background: var(--white); border: 1px solid var(--border); padding: 1.2rem; text-align: center; }
   .stat-number { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--black); display: block; }
   .stat-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); }
+  .workflow-note { font-size: 0.58rem; color: var(--gray); letter-spacing: 0.1em; margin-top: 0.3rem; }
   @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
@@ -117,7 +116,7 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Cloudinary Folder</label>
-          <input type="text" class="form-input" id="clientFolder" placeholder="e.g. sarah-johnson-march26" />
+          <input type="text" class="form-input" id="clientFolder" placeholder="e.g. sarah-johnson" />
         </div>
         <div class="form-group">
           <label class="form-label">Session Date</label>
@@ -126,7 +125,7 @@
       </div>
       <div class="form-actions">
         <button class="form-btn" onclick="addClient()">Create Client Gallery</button>
-        <span class="success-msg" id="successMsg">✓ Client created — gallery expires in 30 days</span>
+        <span class="success-msg" id="successMsg">✓ Client created — expires in 30 days</span>
       </div>
     </div>
 
@@ -152,12 +151,8 @@
   const ADMIN_PASSWORD = 'portalmoments2026';
   const SITE_URL = window.location.origin;
 
-  function getClients() {
-    return JSON.parse(localStorage.getItem('pm_clients') || '[]');
-  }
-  function saveClients(clients) {
-    localStorage.setItem('pm_clients', JSON.stringify(clients));
-  }
+  function getClients() { return JSON.parse(localStorage.getItem('pm_clients') || '[]'); }
+  function saveClients(c) { localStorage.setItem('pm_clients', JSON.stringify(c)); }
 
   function login() {
     const pw = document.getElementById('adminPassword').value;
@@ -176,7 +171,6 @@
     document.getElementById('adminWrap').style.display = 'none';
     document.getElementById('adminPassword').value = '';
   }
-
   if (sessionStorage.getItem('pm_admin')) {
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('adminWrap').style.display = 'block';
@@ -188,49 +182,39 @@
     const email = document.getElementById('clientEmail').value.trim();
     const folder = document.getElementById('clientFolder').value.trim();
     const date = document.getElementById('clientDate').value;
-
-    if (!name || !email || !folder) {
-      alert('Please fill in name, email and folder name.');
-      return;
-    }
-
-    // Auto set 30 day expiry from today
+    if (!name || !email || !folder) { alert('Please fill in name, email and folder name.'); return; }
     const expiry = new Date();
     expiry.setDate(expiry.getDate() + 30);
-    const expiryStr = expiry.toISOString().split('T')[0];
+    getClients().unshift({ id: Date.now(), name, email, folder, date, expiry: expiry.toISOString().split('T')[0], status: 'gallery', revenue: 0, createdAt: new Date().toISOString() });
+    saveClients(getClients());
 
+    // rebuild with new client
     const clients = getClients();
-    clients.unshift({
-      id: Date.now(),
-      name, email, folder, date,
-      expiry: expiryStr,
-      status: 'gallery',
-      revenue: 0,
-      createdAt: new Date().toISOString()
-    });
-    saveClients(clients);
+    const existing = clients.slice(1);
+    const newClient = { id: Date.now(), name, email, folder, date, expiry: expiry.toISOString().split('T')[0], status: 'gallery', revenue: 0, createdAt: new Date().toISOString() };
+    existing.unshift(newClient);
+    saveClients(existing);
 
     document.getElementById('clientName').value = '';
     document.getElementById('clientEmail').value = '';
     document.getElementById('clientFolder').value = '';
     document.getElementById('clientDate').value = '';
-
     const msg = document.getElementById('successMsg');
     msg.style.display = 'inline';
     setTimeout(() => msg.style.display = 'none', 4000);
-
     renderClients();
   }
 
-  function galleryUrl(client) {
+  function galleryUrl(client, state) {
     const firstName = encodeURIComponent(client.name.split(' ')[0]);
-    return SITE_URL + '/gallery.html?email=' + encodeURIComponent(client.email) + '&folder=' + client.folder + '&name=' + firstName + '&expiry=' + (client.expiry || '');
+    const s = state || client.status;
+    const stateParam = (s === 'editing' || s === 'delivered') ? '&state=' + s : '';
+    return SITE_URL + '/gallery.html?email=' + encodeURIComponent(client.email) + '&folder=' + client.folder + '&name=' + firstName + '&expiry=' + (client.expiry || '') + stateParam;
   }
 
   function expiryInfo(expiryStr) {
     if (!expiryStr) return '<span class="expiry-text">—</span>';
-    const diff = new Date(expiryStr) - new Date();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const days = Math.ceil((new Date(expiryStr) - new Date()) / (1000 * 60 * 60 * 24));
     if (days < 0) return '<span class="expiry-text warning">Expired</span>';
     if (days <= 5) return '<span class="expiry-text warning">' + days + ' days left</span>';
     return '<span class="expiry-text">' + days + ' days left</span>';
@@ -239,8 +223,7 @@
   function renderClients() {
     const clients = getClients();
     const body = document.getElementById('clientsBody');
-
-    const purchased = clients.filter(c => c.status === 'purchased' || c.status === 'delivered');
+    const purchased = clients.filter(c => ['purchased','editing','delivered'].includes(c.status));
     const delivered = clients.filter(c => c.status === 'delivered');
     const revenue = clients.reduce((sum, c) => sum + (c.revenue || 0), 0);
     document.getElementById('statTotal').textContent = clients.length;
@@ -249,42 +232,38 @@
     document.getElementById('statRevenue').textContent = '$' + revenue;
 
     if (clients.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; font-size:0.75rem; color:#CCC; letter-spacing:0.15em; text-transform:uppercase;">No clients yet</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;font-size:0.75rem;color:#CCC;letter-spacing:0.15em;text-transform:uppercase;">No clients yet</td></tr>';
       return;
     }
 
     const statusBadge = (status, expiry) => {
-      if (expiry && new Date(expiry) < new Date() && status !== 'delivered') {
-        return '<span class="badge badge-expired">Expired</span>';
-      }
-      const map = {
-        pending: ['Pending', 'badge-pending'],
-        gallery: ['Gallery Ready', 'badge-gallery'],
-        purchased: ['Purchased', 'badge-purchased'],
-        delivered: ['Delivered', 'badge-delivered']
-      };
-      const [label, cls] = map[status] || ['Unknown', ''];
+      if (expiry && new Date(expiry) < new Date() && status !== 'delivered') return '<span class="badge badge-expired">Expired</span>';
+      const map = { gallery: ['Gallery Ready','badge-gallery'], purchased: ['Purchased','badge-purchased'], editing: ['Editing','badge-editing'], delivered: ['Delivered','badge-delivered'] };
+      const [label, cls] = map[status] || ['Unknown',''];
       return '<span class="badge ' + cls + '">' + label + '</span>';
     };
 
-    body.innerHTML = clients.map(function(client) {
+    const actionButtons = (client) => {
+      const id = client.id;
+      let btns = '<button class="action-btn" onclick="openGallery(' + id + ')">View</button>';
+      btns += '<button class="action-btn" onclick="copyLink(\'' + galleryUrl(client).replace(/'/g, "\\'") + '\', this)">Copy link</button>';
+      btns += '<button class="action-btn" onclick="extendExpiry(' + id + ')">+30 days</button>';
+      if (client.status === 'gallery') btns += '<button class="action-btn" onclick="setStatus(' + id + ',\'purchased\')">Mark Purchased</button>';
+      if (client.status === 'purchased') btns += '<button class="action-btn" onclick="setStatus(' + id + ',\'editing\')">Mark Editing</button>';
+      if (client.status === 'editing') btns += '<button class="action-btn" onclick="setStatus(' + id + ',\'delivered\')">Mark Delivered</button>';
+      btns += '<button class="action-btn danger" onclick="deleteClient(' + id + ')">Delete</button>';
+      return btns;
+    };
+
+    body.innerHTML = clients.map(client => {
       const url = galleryUrl(client);
-      const shortUrl = url.replace(window.location.origin, '');
       return '<tr>' +
         '<td><div style="font-size:0.85rem">' + client.name + '</div><div style="font-size:0.7rem;color:var(--gray)">' + client.email + '</div></td>' +
         '<td style="font-size:0.75rem;color:var(--gray)">' + (client.date || '—') + '</td>' +
         '<td>' + statusBadge(client.status, client.expiry) + '</td>' +
         '<td>' + expiryInfo(client.expiry) + '</td>' +
-        '<td>' +
-          '<span class="gallery-url">' + shortUrl.substring(0, 60) + '...</span>' +
-          '<button class="copy-btn" onclick="copyLink(\'' + url.replace(/'/g, "\\'") + '\', this)">Copy full link</button>' +
-        '</td>' +
-        '<td>' +
-          '<button class="action-btn" onclick="openGallery(' + client.id + ')">View</button>' +
-          '<button class="action-btn" onclick="extendExpiry(' + client.id + ')">+30 days</button>' +
-          '<button class="action-btn" onclick="markDelivered(' + client.id + ')">Delivered</button>' +
-          '<button class="action-btn danger" onclick="deleteClient(' + client.id + ')">Delete</button>' +
-        '</td>' +
+        '<td><span class="gallery-url">' + url.replace(window.location.origin,'').substring(0,55) + '...</span></td>' +
+        '<td>' + actionButtons(client) + '</td>' +
       '</tr>';
     }).join('');
   }
@@ -295,12 +274,15 @@
     btn.textContent = 'Copied!';
     setTimeout(() => btn.textContent = orig, 2000);
   }
-
   function openGallery(id) {
     const client = getClients().find(c => c.id === id);
     if (client) window.open(galleryUrl(client), '_blank');
   }
-
+  function setStatus(id, status) {
+    const clients = getClients();
+    const client = clients.find(c => c.id === id);
+    if (client) { client.status = status; saveClients(clients); renderClients(); }
+  }
   function extendExpiry(id) {
     const clients = getClients();
     const client = clients.find(c => c.id === id);
@@ -312,17 +294,6 @@
       renderClients();
     }
   }
-
-  function markDelivered(id) {
-    const clients = getClients();
-    const client = clients.find(c => c.id === id);
-    if (client) {
-      client.status = 'delivered';
-      saveClients(clients);
-      renderClients();
-    }
-  }
-
   function deleteClient(id) {
     if (!confirm('Delete this client? This cannot be undone.')) return;
     saveClients(getClients().filter(c => c.id !== id));
