@@ -243,7 +243,10 @@
     const clients = JSON.parse(localStorage.getItem('pm_clients') || '[]');
     const client = clients.find(c => c.email.toLowerCase() === email.toLowerCase());
     if (client) {
-      window.location.href = 'gallery.html?email=' + encodeURIComponent(email) + '&folder=' + client.folder + '&name=' + encodeURIComponent(client.name.split(' ')[0]);
+      const firstName = encodeURIComponent(client.name.split(' ')[0]);
+      const stateParam = (client.status === 'editing' || client.status === 'delivered') ? '&state=' + client.status : '';
+      const expiryParam = client.expiry ? '&expiry=' + client.expiry : '';
+      window.location.href = 'gallery.html?email=' + encodeURIComponent(email) + '&folder=' + client.folder + '&name=' + firstName + expiryParam + stateParam;
     } else {
       document.getElementById('portalError').style.display = 'block';
     }
