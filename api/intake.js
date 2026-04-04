@@ -1,7 +1,5 @@
 const { google } = require('googleapis');
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'portalmoments2026';
-
 async function getGmailClient() {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GMAIL_CLIENT_ID,
@@ -12,6 +10,33 @@ async function getGmailClient() {
     refresh_token: process.env.GMAIL_REFRESH_TOKEN
   });
   return google.gmail({ version: 'v1', auth: oauth2Client });
+}
+
+async function redisSet(key, value) {
+  const url = `${process.env.UPSTASH_REDIS_REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(value))}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+  });
+  return res.json();
+}
+
+async function redisGet(key) {
+  const url = `${process.env.UPSTASH_REDIS_REST_URL}/get/${encodeURIComponent(key)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+  });
+  const data = await res.json();
+  if (!data.result) return null;
+  try { return JSON.parse(data.result); } catch { return data.result; }
+}
+
+async function redisKeys(pattern) {
+  const url = `${process.env.UPSTASH_REDIS_REST_URL}/keys/${encodeURIComponent(pattern)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+  });
+  const data = await res.json();
+  return data.result || [];
 }
 
 async function sendTelegram(message) {
@@ -27,34 +52,24 @@ async function sendTelegram(message) {
   });
 }
 
-function extractName(subject, body, fromEmail) {
-  // Try to extract name from email signature or greeting
+function extractName(body, fromEmail) {
   const namePatterns = [
     /my name is ([A-Z][a-z]+ [A-Z][a-z]+)/i,
-    /i'm ([A-Z][a-z]+ [A-Z][a-z]+)/i,
+    /i(?:'m| am) ([A-Z][a-z]+ [A-Z][a-z]+)/i,
     /this is ([A-Z][a-z]+ [A-Z][a-z]+)/i,
-    /^([A-Z][a-z]+ [A-Z][a-z]+)$/m,
+    /^([A-Z][a-z]+ [A-Z][a-z]+)[\s,\.]/m,
   ];
   for (const pattern of namePatterns) {
     const match = body.match(pattern);
-    if (match) return match[1];
+    if (match) return match[1].trim();
   }
-  // Fall back to email prefix
   const emailName = fromEmail.split('@')[0];
-  return emailName.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return emailName.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 function generateFolder(name) {
-  return name.toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '') +
-    '-' + new Date().toISOString().slice(0, 10);
-}
-
-function getExpiry() {
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return d.toISOString().split('T')[0];
+  const date = new Date().toISOString().slice(5, 10).replace('-', '');
+  return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + date;
 }
 
 function decodeBase64(str) {
@@ -62,89 +77,85 @@ function decodeBase64(str) {
 }
 
 function getEmailBody(payload) {
-  if (payload.body && payload.body.data) {
-    return decodeBase64(payload.body.data);
-  }
+  if (payload.body?.data) return decodeBase64(payload.body.data);
   if (payload.parts) {
     for (const part of payload.parts) {
-      if (part.mimeType === 'text/plain' && part.body && part.body.data) {
-        return decodeBase64(part.body.data);
-      }
+      if (part.mimeType === 'text/plain' && part.body?.data) return decodeBase64(part.body.data);
     }
     for (const part of payload.parts) {
-      if (part.mimeType === 'text/html' && part.body && part.body.data) {
-        return decodeBase64(part.body.data).replace(/<[^>]+>/g, ' ');
-      }
+      if (part.mimeType === 'text/html' && part.body?.data) return decodeBase64(part.body.data).replace(/<[^>]+>/g, ' ');
     }
   }
   return '';
 }
 
+function buildGalleryUrl(client) {
+  const firstName = encodeURIComponent(client.name.split(' ')[0]);
+  const fullName = encodeURIComponent(client.name);
+  return `https://portalmoments.com/gallery.html?email=${encodeURIComponent(client.email)}&folder=${client.folder}&name=${firstName}&fullname=${fullName}&expiry=${client.expiry}`;
+}
+
 module.exports = async function handler(req, res) {
-  // Security check
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.AGENT_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (authHeader !== `Bearer ${process.env.AGENT_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     const gmail = await getGmailClient();
-
-    // Get unread emails from the last 24 hours
     const since = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+
     const listRes = await gmail.users.messages.list({
       userId: 'me',
-      q: `is:unread after:${since} -from:me`,
+      q: `is:unread after:${since} -from:me -from:noreply -from:no-reply`,
       maxResults: 10
     });
 
     const messages = listRes.data.messages || [];
-
-    if (messages.length === 0) {
-      return res.status(200).json({ message: 'No new emails', processed: 0 });
-    }
-
     let processed = 0;
 
     for (const msg of messages) {
-      const email = await gmail.users.messages.get({
-        userId: 'me',
-        id: msg.id,
-        format: 'full'
-      });
-
+      const email = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
       const headers = email.data.payload.headers;
       const fromHeader = headers.find(h => h.name === 'From')?.value || '';
       const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)';
 
-      // Extract email address from "Name <email@example.com>" format
       const emailMatch = fromHeader.match(/<(.+?)>/) || fromHeader.match(/([^\s]+@[^\s]+)/);
       if (!emailMatch) continue;
       const fromEmail = emailMatch[1].toLowerCase().trim();
+      if (fromEmail.includes('portalmoments') || fromEmail.includes('noreply') || fromEmail.includes('no-reply')) continue;
 
-      // Skip if from portal moments itself
-      if (fromEmail.includes('portalmoments')) continue;
+      // Check if client already exists
+      const existingKey = `client:${fromEmail}`;
+      const existing = await redisGet(existingKey);
+      if (existing) {
+        await gmail.users.messages.modify({ userId: 'me', id: msg.id, requestBody: { removeLabelIds: ['UNREAD'] } });
+        continue;
+      }
 
-      // Get email body
       const body = getEmailBody(email.data.payload);
-
-      // Extract or guess client name
-      const clientName = extractName(subject, body, fromEmail);
-
-      // Generate folder name
+      const clientName = extractName(body, fromEmail);
       const folder = generateFolder(clientName);
 
-      // Generate expiry
-      const expiry = getExpiry();
+      // Create client record — no expiry yet, expiry starts on delivery
+      const client = {
+        id: Date.now(),
+        name: clientName,
+        email: fromEmail,
+        folder,
+        status: 'gallery',
+        expiry: null,
+        revenue: 0,
+        createdAt: new Date().toISOString(),
+        emailSubject: subject
+      };
 
-      // Build gallery URL
-      const firstName = encodeURIComponent(clientName.split(' ')[0]);
-      const fullName = encodeURIComponent(clientName);
-      const galleryUrl = `https://portalmoments.com/gallery.html?email=${encodeURIComponent(fromEmail)}&folder=${folder}&name=${firstName}&fullname=${fullName}&expiry=${expiry}`;
+      // Save to Redis
+      await redisSet(existingKey, client);
+      await redisSet(`clientid:${client.id}`, fromEmail);
+
+      // Build gallery URL — no expiry in URL yet since photos not uploaded
+      const galleryUrlPreview = `https://portalmoments.com/gallery.html?email=${encodeURIComponent(fromEmail)}&folder=${folder}&name=${encodeURIComponent(clientName.split(' ')[0])}&fullname=${encodeURIComponent(clientName)}`;
 
       // Send Telegram notification
       const telegramMsg = `📸 <b>New Portal Moments Client</b>
@@ -153,25 +164,28 @@ module.exports = async function handler(req, res) {
 <b>Email:</b> ${fromEmail}
 <b>Subject:</b> ${subject}
 
-<b>Folder:</b> ${folder}
-<b>Gallery expires:</b> ${expiry}
+<b>Message:</b>
+${body.slice(0, 150).trim()}...
 
-<b>Next steps:</b>
-1. Upload photos to Cloudinary: <code>${folder}/previews/</code>
-2. Send Template 1 email with gallery link
-3. Create client in admin panel
+━━━━━━━━━━━━━━━
+<b>Client created automatically ✅</b>
 
-<b>Gallery link:</b>
-${galleryUrl}`;
+<b>Cloudinary folder:</b>
+<code>${folder}/previews/</code>
+
+<b>Gallery link (copy for Template 1):</b>
+<code>${galleryUrlPreview}</code>
+
+<b>Your only steps:</b>
+1️⃣ Upload photos to Cloudinary: <code>${folder}/previews/</code>
+2️⃣ Send Template 1 to <code>${fromEmail}</code>
+   → attach hero photo
+   → paste gallery link above`;
 
       await sendTelegram(telegramMsg);
 
       // Mark email as read
-      await gmail.users.messages.modify({
-        userId: 'me',
-        id: msg.id,
-        requestBody: { removeLabelIds: ['UNREAD'] }
-      });
+      await gmail.users.messages.modify({ userId: 'me', id: msg.id, requestBody: { removeLabelIds: ['UNREAD'] } });
 
       processed++;
     }
