@@ -22,7 +22,7 @@
   .grid-section { padding: 1rem; }
   .photo-grid { columns: 3; column-gap: 6px; }
   .grid-item { break-inside: avoid; margin-bottom: 6px; overflow: hidden; cursor: pointer; position: relative; }
-  .grid-item img { width: 100%; display: block; transition: opacity 0.3s ease; }
+  .grid-item img { width: 100%; display: block; transition: opacity 0.3s ease; pointer-events: none; user-select: none; -webkit-user-drag: none; }
   .grid-item:hover img { opacity: 0.88; }
   .grid-item::before { content: ''; position: absolute; inset: 0; z-index: 1; transition: opacity 0.6s ease; }
   .grid-item.loaded::before { opacity: 0; pointer-events: none; }
@@ -70,7 +70,7 @@
   .lightbox-arrow:hover { color: white; }
   .lightbox-arrow.prev { left: 1rem; }
   .lightbox-arrow.next { right: 1rem; }
-  .lightbox-counter { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); font-family: 'Jost', sans-serif; font-weight: 300; }
+  
 
   /* MODAL */
   .modal-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
@@ -91,7 +91,7 @@
   .modal-close:hover { color: var(--black); }
 
   @media (max-width: 900px) { .photo-grid { columns: 2; } }
-  @media (max-width: 560px) { .photo-grid { columns: 1; } .grid-section { padding: 0.75rem; } .lightbox-arrow.prev { left: 0.25rem; } .lightbox-arrow.next { right: 0.25rem; } .site-name { font-size: 1.2rem; } .site-slogan { font-size: 0.85rem; } .modal { padding: 2rem 1.5rem; } }
+  @media (max-width: 560px) { .photo-grid { columns: 1; } .grid-section { padding: 0.75rem; } .lightbox-arrow.prev { left: 0.25rem; } .lightbox-arrow.next { right: 0.25rem; } .site-name { font-size: 1.5rem; letter-spacing: -0.02em; } .site-slogan { font-size: 0.85rem; } .modal { padding: 2rem 1.5rem; } }
 </style>
 </head>
 <body>
@@ -154,7 +154,7 @@
   <button class="lightbox-arrow prev" onclick="changeLightbox(-1)">&#8592;</button>
   <div class="lightbox-img-wrap"><img src="" alt="Portal Moment" id="lightboxImg" /></div>
   <button class="lightbox-arrow next" onclick="changeLightbox(1)">&#8594;</button>
-  <span class="lightbox-counter" id="lightboxCounter"></span>
+  
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -186,7 +186,7 @@
     const photos = getPhotos();
     currentIndex = index;
     document.getElementById('lightboxImg').src = photos[currentIndex];
-    document.getElementById('lightboxCounter').textContent = (currentIndex + 1) + ' / ' + photos.length;
+    
     document.getElementById('lightbox').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -204,13 +204,15 @@
     setTimeout(() => {
       img.src = photos[currentIndex];
       img.style.opacity = '1';
-      document.getElementById('lightboxCounter').textContent = (currentIndex + 1) + ' / ' + photos.length;
+      
     }, 150);
   }
 
   document.getElementById('lightbox').addEventListener('click', function(e) {
     if (e.target === this) closeLightbox();
   });
+
+  document.addEventListener('contextmenu', function(e) { if (e.target.tagName === 'IMG') e.preventDefault(); });
 
   document.addEventListener('keydown', e => {
     const lb = document.getElementById('lightbox');
@@ -263,6 +265,8 @@
       document.getElementById('portalError').style.display = 'block';
     }
   }
+
+  document.addEventListener('contextmenu', function(e) { if (e.target.tagName === 'IMG') e.preventDefault(); });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closePortal();
