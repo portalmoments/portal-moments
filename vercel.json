@@ -3,6 +3,20 @@
     "api/gallery.js": {
       "memory": 512,
       "maxDuration": 10
+    },
+    "api/intake.js": {
+      "memory": 512,
+      "maxDuration": 30
+    },
+    "api/clients.js": {
+      "memory": 256,
+      "maxDuration": 10
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/intake",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
