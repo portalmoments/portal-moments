@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Portal Moments</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   :root { --black: #0A0A0A; --gray: #888888; --border: #E0E0E0; --white: #FFFFFF; --light: #FAFAFA; }
   body { background: var(--light); color: var(--black); font-family: 'Jost', sans-serif; font-weight: 300; min-height: 100vh; }
   .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
   .login-box { background: var(--white); border: 1px solid var(--border); padding: 3rem 2.5rem; width: 340px; text-align: center; }
-  .login-title { font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.4rem; }
+  .login-title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.4rem; letter-spacing: -0.02em; text-transform: uppercase; margin-bottom: 0.4rem; }
   .login-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.85rem; color: var(--gray); margin-bottom: 2rem; }
   .login-input { width: 100%; border: none; border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.85rem; color: var(--black); outline: none; margin-bottom: 1.5rem; background: transparent; text-align: center; transition: border-color 0.2s ease; }
   .login-input:focus { border-color: var(--black); }
@@ -20,11 +20,11 @@
   .login-error { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #cc4444; margin-top: 1rem; display: none; }
   .admin-wrap { display: none; }
   .admin-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-  .admin-logo { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; }
+  .admin-logo { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.1rem; letter-spacing: -0.02em; text-transform: uppercase; }
   .admin-logout { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; transition: color 0.2s ease; }
   .admin-logout:hover { color: var(--black); }
   .admin-body { max-width: 1100px; margin: 0 auto; padding: 2rem; }
-  .section-title { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
   .new-client-form { background: var(--white); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
   .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
