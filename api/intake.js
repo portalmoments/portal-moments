@@ -198,8 +198,9 @@ portalmoments.com
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (req.headers.authorization !== `Bearer ${process.env.AGENT_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+  const isCron = req.headers['x-vercel-cron'] === '1';
+  if (req.method !== 'POST' && !isCron) return res.status(405).json({ error: 'Method not allowed' });
+  if (!isCron && req.headers.authorization !== `Bearer ${process.env.AGENT_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
 
   const action = req.body?.action || 'check_emails';
 
