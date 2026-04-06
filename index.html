@@ -12,8 +12,10 @@
   body { background: var(--white); color: var(--black); font-family: 'Jost', sans-serif; font-weight: 300; }
 
   header { padding: 4rem 2rem 2.5rem; text-align: center; }
-  .site-name { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 2.4rem; letter-spacing: -0.02em; text-transform: uppercase; color: var(--black); text-decoration: none; display: block; margin-bottom: 0.75rem; }
-  .site-slogan { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 1rem; color: var(--gray); letter-spacing: 0.08em; display: block; }
+  .site-name { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 2.4rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--black); text-decoration: none; display: block; margin-bottom: 0.6rem; }
+  .site-slogan { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 1rem; color: var(--gray); letter-spacing: 0.04em; display: block; margin-bottom: 1.2rem; }
+  .portal-link { font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gray); text-decoration: none; display: inline-block; border-bottom: 1px solid var(--border); padding-bottom: 2px; transition: color 0.2s ease, border-color 0.2s ease; }
+  .portal-link:hover { color: var(--black); border-color: var(--black); }
 
   .header-divider { height: 1px; background: var(--border); margin: 0; }
 
@@ -22,10 +24,8 @@
   .grid-item { break-inside: avoid; margin-bottom: 6px; overflow: hidden; cursor: pointer; position: relative; }
   .grid-item img { width: 100%; display: block; transition: opacity 0.3s ease; }
   .grid-item:hover img { opacity: 0.88; }
-
   .grid-item::before { content: ''; position: absolute; inset: 0; z-index: 1; transition: opacity 0.6s ease; }
   .grid-item.loaded::before { opacity: 0; pointer-events: none; }
-
   .grid-item:nth-child(1)::before { background: #3a3a35; }
   .grid-item:nth-child(2)::before { background: #2a4a5a; }
   .grid-item:nth-child(3)::before { background: #4a5a3a; }
@@ -72,8 +72,26 @@
   .lightbox-arrow.next { right: 1rem; }
   .lightbox-counter { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.3); font-family: 'Jost', sans-serif; font-weight: 300; }
 
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-blur { position: absolute; inset: 0; background: rgba(255,255,255,0); transition: background 0.5s ease; }
+  .modal-blur.active { background: rgba(255,255,255,0.55); }
+  .modal { position: relative; z-index: 1; background: var(--white); max-width: 380px; width: 90%; padding: 3rem 2.5rem; text-align: center; transform: translateY(12px); transition: transform 0.35s ease; box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 2rem; color: var(--black); margin-bottom: 0.4rem; }
+  .modal-sub { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); margin-bottom: 2.5rem; line-height: 1.8; }
+  .modal-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.9rem; color: var(--black); text-align: center; letter-spacing: 0.05em; outline: none; transition: border-color 0.2s ease; margin-bottom: 2rem; }
+  .modal-input::placeholder { color: #CCCCCC; }
+  .modal-input:focus { border-color: var(--black); }
+  .modal-btn { width: 100%; font-family: 'Jost', sans-serif; font-weight: 300; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: white; background: rgba(10,10,10,0.8); border: none; padding: 0.9rem 2rem; cursor: pointer; transition: background 0.2s ease; margin-bottom: 1.5rem; }
+  .modal-btn:hover { background: rgba(10,10,10,0.95); }
+  .modal-error { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #cc4444; margin-bottom: 1rem; display: none; }
+  .modal-close { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray); background: none; border: none; cursor: pointer; transition: color 0.2s ease; }
+  .modal-close:hover { color: var(--black); }
+
   @media (max-width: 900px) { .photo-grid { columns: 2; } }
-  @media (max-width: 560px) { .photo-grid { columns: 1; } .grid-section { padding: 0.75rem; } .lightbox-arrow.prev { left: 0.25rem; } .lightbox-arrow.next { right: 0.25rem; } .site-name { font-size: 1.4rem; } .site-slogan { font-size: 0.85rem; } }
+  @media (max-width: 560px) { .photo-grid { columns: 1; } .grid-section { padding: 0.75rem; } .lightbox-arrow.prev { left: 0.25rem; } .lightbox-arrow.next { right: 0.25rem; } .site-name { font-size: 1.6rem; } .site-slogan { font-size: 0.85rem; } .modal { padding: 2rem 1.5rem; } }
 </style>
 </head>
 <body>
@@ -81,6 +99,7 @@
 <header>
   <a href="#" class="site-name">Portal Moments</a>
   <span class="site-slogan">Freezing your essence in spontaneous moments.</span>
+  <a href="#" class="portal-link" onclick="openPortal(event)">Enter Your Portal</a>
 </header>
 
 <div class="header-divider"></div>
@@ -133,11 +152,21 @@
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" onclick="closeLightbox()">Close</button>
   <button class="lightbox-arrow prev" onclick="changeLightbox(-1)">&#8592;</button>
-  <div class="lightbox-img-wrap">
-    <img src="" alt="Portal Moment" id="lightboxImg" />
-  </div>
+  <div class="lightbox-img-wrap"><img src="" alt="Portal Moment" id="lightboxImg" /></div>
   <button class="lightbox-arrow next" onclick="changeLightbox(1)">&#8594;</button>
   <span class="lightbox-counter" id="lightboxCounter"></span>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-blur" id="modalBlur" onclick="closePortal()"></div>
+  <div class="modal">
+    <p class="modal-title">Your Portal</p>
+    <p class="modal-sub">Enter the email you used to contact us.<br>Your moment is waiting.</p>
+    <input type="email" class="modal-input" id="portalEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter') findPortal()" />
+    <button class="modal-btn" onclick="findPortal()">Find My Photos</button>
+    <p class="modal-error" id="portalError">Email not found — please check and try again</p>
+    <button class="modal-close" onclick="closePortal()">← Return</button>
+  </div>
 </div>
 
 <script>
@@ -190,6 +219,53 @@
       if (e.key === 'ArrowRight') changeLightbox(1);
       if (e.key === 'Escape') closeLightbox();
     }
+  });
+
+  function openPortal(e) {
+    e.preventDefault();
+    document.getElementById('portalError').style.display = 'none';
+    document.getElementById('portalEmail').value = '';
+    document.getElementById('modalOverlay').classList.add('open');
+    setTimeout(function() {
+      document.getElementById('modalBlur').classList.add('active');
+    }, 20);
+  }
+
+  function closePortal() {
+    document.getElementById('modalBlur').classList.remove('active');
+    setTimeout(function() {
+      document.getElementById('modalOverlay').classList.remove('open');
+    }, 400);
+  }
+
+  async function findPortal() {
+    const email = document.getElementById('portalEmail').value.trim();
+    if (!email || !email.includes('@')) {
+      document.getElementById('portalError').style.display = 'block';
+      return;
+    }
+    try {
+      const res = await fetch('/api/clients?action=get&email=' + encodeURIComponent(email), {
+        headers: { 'Authorization': 'Bearer pm-agent-2026' }
+      });
+      const data = await res.json();
+      if (data.client) {
+        const client = data.client;
+        const firstName = encodeURIComponent(client.name.split(' ')[0]);
+        const fullName = encodeURIComponent(client.name);
+        const stateParam = (client.status === 'editing' || client.status === 'delivered') ? '&state=' + client.status : '';
+        const expiryParam = client.expiry ? '&expiry=' + client.expiry : '';
+        window.location.href = 'gallery.html?email=' + encodeURIComponent(email) + '&folder=' + client.folder + '&name=' + firstName + '&fullname=' + fullName + expiryParam + stateParam;
+      } else {
+        document.getElementById('portalError').style.display = 'block';
+      }
+    } catch(e) {
+      document.getElementById('portalError').style.display = 'block';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closePortal();
   });
 </script>
 </body>
