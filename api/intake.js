@@ -107,7 +107,16 @@ function isRealClientEmail(subject, body) {
   return false;
 }
 
-function extractName(body, fromEmail) {
+function extractName(fromHeader, body, fromEmail) {
+  // Best source: display name from "Anna Totska <anna@email.com>"
+  const displayMatch = fromHeader.match(/^([^<]+)</);
+  if (displayMatch) {
+    const displayName = displayMatch[1].trim().replace(/"/g, '');
+    if (displayName && displayName.includes(' ')) return displayName;
+    if (displayName && displayName.length > 1) return displayName;
+  }
+
+  // Second: look for name patterns in email body
   const namePatterns = [
     /my name is ([A-Z][a-z]+ [A-Z][a-z]+)/i,
     /i(?:'m| am) ([A-Z][a-z]+ [A-Z][a-z]+)/i,
@@ -118,13 +127,19 @@ function extractName(body, fromEmail) {
     const match = body.match(pattern);
     if (match) return match[1].trim();
   }
+
+  // Last resort: clean up email prefix
   const emailName = fromEmail.split('@')[0];
   return emailName.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 function generateFolder(name) {
   const date = new Date().toISOString().slice(5, 10).replace('-', '');
-  return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + date;
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0] || '';
+  const last = parts[1] || '';
+  const folder = (first + '-' + last).toLowerCase().replace(/[^a-z0-9-]/g, '');
+  return folder + '-' + date;
 }
 
 function decodeBase64(str) {
@@ -242,49 +257,38 @@ module.exports = async function handler(req, res) {
         const existing = await redisGet(existingKey);
         if (existing) continue;
 
-        const clientName = extractName(body, fromEmail);
-        const folder = generateFolder(clientName);
+        const detectedName = extractName(fromHeader, body, fromEmail);
+        const folder = generateFolder(detectedName);
 
-        const client = {
-          id: Date.now(),
-          name: clientName,
-          email: fromEmail,
+        // Save as pending — waiting for name confirmation
+        const pendingKey = `pending:${fromEmail}`;
+        await redisSet(pendingKey, {
+          detectedName,
+          fromEmail,
           folder,
-          status: 'gallery',
-          expiry: null,
-          revenue: 0,
-          createdAt: new Date().toISOString(),
-          emailSubject: subject
-        };
+          subject,
+          bodyPreview: body.slice(0, 300),
+          detectedAt: new Date().toISOString()
+        });
 
-        await redisSet(existingKey, client);
-        await redisSet(`clientid:${client.id}`, fromEmail);
+        // Ask Anna to confirm name in Telegram
+        await sendTelegram(`📸 <b>New Portal Moments Inquiry</b>
 
-        const galleryUrl = buildGalleryUrl(client);
-
-        await sendTelegram(`📸 <b>New Portal Moments Client</b>
-
-<b>Name:</b> ${clientName}
+<b>Detected name:</b> ${detectedName}
 <b>Email:</b> ${fromEmail}
 <b>Subject:</b> ${subject}
 
-<b>Message:</b>
+<b>Message preview:</b>
 ${body.slice(0, 200).trim()}
 
 ━━━━━━━━━━━━━━━
-✅ <b>Client created automatically</b>
+<b>Confirm or correct the name:</b>
 
-<b>Cloudinary folder:</b>
-<code>${folder}/previews/</code>
+✅ Reply <b>confirm</b> to use <b>${detectedName}</b>
+✏️ Or reply with correct full name
+   Example: <i>Sarah Johnson</i>
 
-<b>Gallery link — copy for Template 1:</b>
-<code>${galleryUrl}</code>
-
-<b>Your steps:</b>
-1️⃣ Drop photos in Desktop upload folder: <code>${folder}/previews/</code>
-2️⃣ Send Template 1 to <code>${fromEmail}</code>
-   → attach hero photo
-   → paste gallery link above`);
+<i>Client will be created after your reply.</i>`);
 
         processed++;
       }
@@ -421,6 +425,64 @@ Please delete these folders from Cloudinary to free up storage.`);
       }
 
       return res.status(200).json({ expiringSoon: expiringSoon.length, toDelete: toDelete.length });
+    }
+
+    // ACTION: CONFIRM CLIENT (called from Telegram webhook)
+    if (action === 'confirm_client') {
+      const { email, confirmedName } = req.body;
+      if (!email) return res.status(400).json({ error: 'Missing email' });
+
+      const pendingKey = `pending:${email}`;
+      const pending = await redisGet(pendingKey);
+      if (!pending) return res.status(404).json({ error: 'No pending client found' });
+
+      const clientName = confirmedName || pending.detectedName;
+      const folder = generateFolder(clientName);
+
+      // Create the client in Redis
+      const client = {
+        id: Date.now(),
+        name: clientName,
+        email: email.toLowerCase(),
+        folder,
+        status: 'gallery',
+        expiry: null,
+        revenue: 0,
+        createdAt: new Date().toISOString(),
+        emailSubject: pending.subject
+      };
+
+      await redisSet(`client:${email}`, client);
+      await redisSet(`clientid:${client.id}`, email);
+
+      // Delete pending record
+      await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/del/${encodeURIComponent(pendingKey)}`, {
+        headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+      });
+
+      // Build gallery URL
+      const firstName = encodeURIComponent(clientName.split(' ')[0]);
+      const fullName = encodeURIComponent(clientName);
+      const galleryUrl = `https://portalmoments.com/gallery.html?email=${encodeURIComponent(email)}&folder=${folder}&name=${firstName}&fullname=${fullName}`;
+
+      // Send confirmation to Telegram
+      await sendTelegram(`✅ <b>Client Created: ${clientName}</b>
+
+<b>Email:</b> ${email}
+<b>Cloudinary folder:</b> <code>${folder}/previews/</code>
+
+<b>Gallery link — copy for Template 1:</b>
+<code>${galleryUrl}</code>
+
+━━━━━━━━━━━━━━━
+<b>Your next steps:</b>
+1️⃣ Create Desktop folder: <code>${folder}/previews/</code>
+2️⃣ Drop unedited photos there
+3️⃣ Send Template 1 to <code>${email}</code>
+   → Attach hero photo
+   → Paste gallery link above`);
+
+      return res.status(200).json({ message: 'Client created', client });
     }
 
     return res.status(400).json({ error: 'Unknown action' });
