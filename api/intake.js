@@ -1,7 +1,5 @@
 const { google } = require('googleapis');
-const https = require('https');
 
-// ─── GMAIL ───────────────────────────────────────────────────────────────────
 async function getGmailClient() {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GMAIL_CLIENT_ID,
@@ -12,20 +10,6 @@ async function getGmailClient() {
   return google.gmail({ version: 'v1', auth: oauth2Client });
 }
 
-async function sendGmail(gmail, to, subject, body) {
-  const message = [
-    `To: ${to}`,
-    'Content-Type: text/plain; charset=utf-8',
-    'MIME-Version: 1.0',
-    `Subject: ${subject}`,
-    '',
-    body
-  ].join('\n');
-  const encoded = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
-  await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encoded } });
-}
-
-// ─── REDIS ───────────────────────────────────────────────────────────────────
 async function redisSet(key, value) {
   const url = `${process.env.UPSTASH_REDIS_REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(value))}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } });
@@ -40,7 +24,18 @@ async function redisGet(key) {
   try { return JSON.parse(data.result); } catch { return data.result; }
 }
 
-// ─── TELEGRAM ─────────────────────────────────────────────────────────────────
+async function redisDel(key) {
+  const url = `${process.env.UPSTASH_REDIS_REST_URL}/del/${encodeURIComponent(key)}`;
+  await fetch(url, { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } });
+}
+
+async function redisKeys(pattern) {
+  const url = `${process.env.UPSTASH_REDIS_REST_URL}/keys/${encodeURIComponent(pattern)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } });
+  const data = await res.json();
+  return data.result || [];
+}
+
 async function sendTelegram(message) {
   await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: 'POST',
@@ -53,36 +48,49 @@ async function sendTelegram(message) {
   });
 }
 
-// ─── CLOUDINARY ──────────────────────────────────────────────────────────────
-async function cloudinaryUpload(fileBuffer, fileName, folder) {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  const timestamp = Math.floor(Date.now() / 1000);
-  const publicId = `${folder}/${fileName.replace(/\.[^.]+$/, '')}`;
+// BLOCK automated senders and subjects
+function isAutomatedEmail(fromEmail, subject) {
+  // Block these sender domains completely
+  const blockedDomains = [
+    'noreply', 'no-reply', 'donotreply', 'do-not-reply',
+    'accounts.google.com', 'mail.google.com',
+    'notifications.google.com', 'support.google.com',
+    'apple.com', 'icloud.com', 'appleid.apple.com',
+    'stripe.com', 'vercel.com', 'github.com',
+    'cloudinary.com', 'anthropic.com', 'namecheap.com',
+    'upstash.com', 'x.com', 'twitter.com',
+    'linkedin.com', 'facebook.com', 'instagram.com',
+    'paypal.com', 'shopify.com', 'mailchimp.com',
+    'sendgrid.net', 'amazonses.com', 'vistaprint'
+  ];
+  for (const domain of blockedDomains) {
+    if (fromEmail.includes(domain)) return true;
+  }
 
-  const crypto = require('crypto');
-  const signature = crypto
-    .createHash('sha1')
-    .update(`public_id=${publicId}&timestamp=${timestamp}${apiSecret}`)
-    .digest('hex');
+  // Block these subject patterns
+  const blockedSubjects = [
+    'security alert', 'new sign-in', 'sign-in attempt',
+    'account access', 'verify your', 'confirm your email',
+    'suspicious activity', 'unusual activity',
+    'password', 'two-factor', '2-step verification',
+    'receipt for', 'invoice', 'your invoice',
+    'payment received', 'payment confirmation',
+    'your order', 'order confirmation', 'shipment',
+    'subscription', 'unsubscribe', 'notification',
+    'automated', 'do not reply', 'no reply',
+    'billing', 'statement', 'transaction',
+    'welcome to', 'activate your', 'please verify',
+    'thanks for signing up', 'account created'
+  ];
+  const subjectLower = subject.toLowerCase();
+  for (const s of blockedSubjects) {
+    if (subjectLower.includes(s)) return true;
+  }
 
-  const FormData = require('form-data');
-  const form = new FormData();
-  form.append('file', fileBuffer, fileName);
-  form.append('public_id', publicId);
-  form.append('timestamp', timestamp);
-  form.append('api_key', apiKey);
-  form.append('signature', signature);
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: 'POST',
-    body: form
-  });
-  return res.json();
+  return false;
 }
 
-// ─── EMAIL DETECTION ─────────────────────────────────────────────────────────
+// ALLOW only real client emails with photography keywords
 function isRealClientEmail(subject, body) {
   const text = (subject + ' ' + body).toLowerCase();
   const clientKeywords = [
@@ -92,14 +100,13 @@ function isRealClientEmail(subject, body) {
     'i met you', 'met you', 'you came up',
     'the photographer', 'a photographer',
     'free photo', 'my photo', 'my picture',
-    'send me', 'my photos',
     'yesterday', 'this afternoon', 'this morning',
     'last night', 'today at', 'earlier today',
     'park', 'street', 'downtown', 'market',
     'distillery', 'kensington', 'bellwoods',
     'high park', 'waterfront',
     'i was wearing', 'i had on', 'i was sitting',
-    'i was standing', 'i was walking', 'i was with',
+    'i was standing', 'i was walking',
   ];
   for (const keyword of clientKeywords) {
     if (text.includes(keyword)) return true;
@@ -107,39 +114,26 @@ function isRealClientEmail(subject, body) {
   return false;
 }
 
-function extractName(fromHeader, body, fromEmail) {
-  // Best source: display name from "Anna Totska <anna@email.com>"
-  const displayMatch = fromHeader.match(/^([^<]+)</);
-  if (displayMatch) {
-    const displayName = displayMatch[1].trim().replace(/"/g, '');
-    if (displayName && displayName.includes(' ')) return displayName;
-    if (displayName && displayName.length > 1) return displayName;
+// Extract display name from "Anna Totska <anna@email.com>"
+function extractDisplayName(fromHeader) {
+  // Match: Anna Totska <email> or "Anna Totska" <email>
+  const match = fromHeader.match(/^"?([^"<]+)"?\s*</);
+  if (match) {
+    const name = match[1].trim();
+    // Make sure it's not an email address itself
+    if (!name.includes('@') && name.length > 1) {
+      return name;
+    }
   }
-
-  // Second: look for name patterns in email body
-  const namePatterns = [
-    /my name is ([A-Z][a-z]+ [A-Z][a-z]+)/i,
-    /i(?:'m| am) ([A-Z][a-z]+ [A-Z][a-z]+)/i,
-    /this is ([A-Z][a-z]+ [A-Z][a-z]+)/i,
-    /^([A-Z][a-z]+ [A-Z][a-z]+)[\s,\.]/m,
-  ];
-  for (const pattern of namePatterns) {
-    const match = body.match(pattern);
-    if (match) return match[1].trim();
-  }
-
-  // Last resort: clean up email prefix
-  const emailName = fromEmail.split('@')[0];
-  return emailName.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return null;
 }
 
 function generateFolder(name) {
   const date = new Date().toISOString().slice(5, 10).replace('-', '');
   const parts = name.trim().split(/\s+/);
-  const first = parts[0] || '';
-  const last = parts[1] || '';
-  const folder = (first + '-' + last).toLowerCase().replace(/[^a-z0-9-]/g, '');
-  return folder + '-' + date;
+  const first = (parts[0] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const last = (parts[1] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return last ? `${first}-${last}-${date}` : `${first}-${date}`;
 }
 
 function decodeBase64(str) {
@@ -159,287 +153,28 @@ function getEmailBody(payload) {
   return '';
 }
 
-function buildGalleryUrl(client, state) {
-  const firstName = encodeURIComponent(client.name.split(' ')[0]);
-  const fullName = encodeURIComponent(client.name);
-  let url = `https://portalmoments.com/gallery.html?email=${encodeURIComponent(client.email)}&folder=${client.folder}&name=${firstName}&fullname=${fullName}`;
-  if (client.expiry) url += `&expiry=${client.expiry}`;
-  if (state) url += `&state=${state}`;
-  return url;
-}
-
-function getExpiryDate(daysFromNow) {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  return d.toISOString().split('T')[0];
-}
-
-// ─── EMAIL TEMPLATES ─────────────────────────────────────────────────────────
-function template3(clientName, packageName, price) {
-  return `Hello ${clientName.split(' ')[0]},
-
-Your order is confirmed — thank you.
-
-I'm now preparing your full collection with the same care as the moment itself. You'll receive your edited photos shortly.
-
-Here's what you ordered:
-${packageName} — ${price}
-
-Warmly,
-Anna Totska
-Portal Moments
-portalmoments.com
-@portalmoments`;
-}
-
-function template4(clientName, galleryUrl) {
-  return `Hello ${clientName.split(' ')[0]},
-
-They're here.
-
-Every photo was edited with the same intention as the moment itself. I hope when you look at these, you feel exactly what I felt when I captured them.
-
-Access your full gallery here:
-${galleryUrl}
-
-Your photos are yours forever. Download them, print them, keep them somewhere you'll find them on the days you need a reminder of who you are.
-
-Warmly,
-Anna Totska
-Portal Moments
-portalmoments.com
-@portalmoments`;
-}
-
-// ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
   const isCron = req.headers['x-vercel-cron'] === '1';
   if (req.method !== 'POST' && !isCron) return res.status(405).json({ error: 'Method not allowed' });
-  if (!isCron && req.headers.authorization !== `Bearer ${process.env.AGENT_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+  if (!isCron && req.headers.authorization !== `Bearer ${process.env.AGENT_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
   const action = req.body?.action || 'check_emails';
 
   try {
-    const gmail = await getGmailClient();
-
-    // ── ACTION: CHECK NEW EMAILS ──────────────────────────────────────────────
-    if (action === 'check_emails') {
-      const since = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
-      const listRes = await gmail.users.messages.list({
-        userId: 'me',
-        q: `is:unread after:${since} -from:me`,
-        maxResults: 10
-      });
-
-      const messages = listRes.data.messages || [];
-      let processed = 0;
-
-      for (const msg of messages) {
-        const email = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
-        const headers = email.data.payload.headers;
-        const fromHeader = headers.find(h => h.name === 'From')?.value || '';
-        const subject = headers.find(h => h.name === 'Subject')?.value || '';
-        const emailMatch = fromHeader.match(/<(.+?)>/) || fromHeader.match(/([^\s]+@[^\s]+)/);
-        if (!emailMatch) continue;
-        const fromEmail = emailMatch[1].toLowerCase().trim();
-        if (fromEmail.includes('portalmoments')) continue;
-
-        const body = getEmailBody(email.data.payload);
-
-        // Mark read regardless
-        await gmail.users.messages.modify({ userId: 'me', id: msg.id, requestBody: { removeLabelIds: ['UNREAD'] } });
-
-        // Only process real client emails
-        if (!isRealClientEmail(subject, body)) continue;
-
-        // Skip existing clients
-        const existingKey = `client:${fromEmail}`;
-        const existing = await redisGet(existingKey);
-        if (existing) continue;
-
-        const detectedName = extractName(fromHeader, body, fromEmail);
-        const folder = generateFolder(detectedName);
-
-        // Save as pending — waiting for name confirmation
-        const pendingKey = `pending:${fromEmail}`;
-        await redisSet(pendingKey, {
-          detectedName,
-          fromEmail,
-          folder,
-          subject,
-          bodyPreview: body.slice(0, 300),
-          detectedAt: new Date().toISOString()
-        });
-
-        // Ask Anna to confirm name in Telegram
-        await sendTelegram(`📸 <b>New Portal Moments Inquiry</b>
-
-<b>Detected name:</b> ${detectedName}
-<b>Email:</b> ${fromEmail}
-<b>Subject:</b> ${subject}
-
-<b>Message preview:</b>
-${body.slice(0, 200).trim()}
-
-━━━━━━━━━━━━━━━
-<b>Confirm or correct the name:</b>
-
-✅ Reply <b>confirm</b> to use <b>${detectedName}</b>
-✏️ Or reply with correct full name
-   Example: <i>Sarah Johnson</i>
-
-<i>Client will be created after your reply.</i>`);
-
-        processed++;
-      }
-
-      return res.status(200).json({ message: 'Done', processed });
-    }
-
-    // ── ACTION: PAYMENT RECEIVED (called by Stripe webhook) ──────────────────
-    if (action === 'payment_received') {
-      const { clientEmail, packageName, price, selectedPhotos } = req.body;
-      if (!clientEmail) return res.status(400).json({ error: 'Missing clientEmail' });
-
-      const client = await redisGet(`client:${clientEmail}`);
-      if (!client) return res.status(404).json({ error: 'Client not found' });
-
-      client.status = 'purchased';
-      client.package = packageName;
-      client.price = price;
-      client.selectedPhotos = selectedPhotos;
-      client.purchasedAt = new Date().toISOString();
-      await redisSet(`client:${clientEmail}`, client);
-
-      // Send Template 3 to client
-      await sendGmail(
-        gmail,
-        clientEmail,
-        'Your collection is being prepared ✨',
-        template3(client.name, packageName || 'Your package', price || '')
-      );
-
-      // Notify Anna
-      await sendTelegram(`💳 <b>Payment Received</b>
-
-<b>Client:</b> ${client.name}
-<b>Email:</b> ${clientEmail}
-<b>Package:</b> ${packageName}
-<b>Amount:</b> ${price}
-
-<b>Selected photos:</b>
-${selectedPhotos || 'Check Stripe for details'}
-
-━━━━━━━━━━━━━━━
-✅ Template 3 sent to client automatically
-🎨 <b>Start editing in Lightroom!</b>
-📁 Upload edited photos to: <code>${client.folder}/edited/</code>`);
-
-      return res.status(200).json({ message: 'Payment processed' });
-    }
-
-    // ── ACTION: MARK DELIVERED ────────────────────────────────────────────────
-    if (action === 'mark_delivered') {
-      const { clientEmail } = req.body;
-      if (!clientEmail) return res.status(400).json({ error: 'Missing clientEmail' });
-
-      const client = await redisGet(`client:${clientEmail}`);
-      if (!client) return res.status(404).json({ error: 'Client not found' });
-
-      // Set 30 day expiry from delivery date
-      client.status = 'delivered';
-      client.expiry = getExpiryDate(30);
-      client.deliveredAt = new Date().toISOString();
-      await redisSet(`client:${clientEmail}`, client);
-
-      const galleryUrl = buildGalleryUrl(client, 'delivered');
-
-      // Send Template 4 to client
-      await sendGmail(
-        gmail,
-        clientEmail,
-        'Your Portal Moments are ready 🌿',
-        template4(client.name, galleryUrl)
-      );
-
-      // Notify Anna
-      await sendTelegram(`✅ <b>Delivered: ${client.name}</b>
-
-Template 4 sent automatically.
-Gallery expires: ${client.expiry}
-
-<b>Gallery link:</b>
-<code>${galleryUrl}</code>`);
-
-      return res.status(200).json({ message: 'Delivered', expiry: client.expiry });
-    }
-
-    // ── ACTION: CHECK EXPIRY & CLEANUP REMINDERS ─────────────────────────────
-    if (action === 'check_cleanup') {
-      const keys = await (async () => {
-        const url = `${process.env.UPSTASH_REDIS_REST_URL}/keys/${encodeURIComponent('client:*')}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` } });
-        const data = await res.json();
-        return data.result || [];
-      })();
-
-      const now = new Date();
-      let expiringSoon = [];
-      let toDelete = [];
-
-      for (const key of keys) {
-        const client = await redisGet(key);
-        if (!client || !client.deliveredAt) continue;
-
-        const deliveredAt = new Date(client.deliveredAt);
-        const daysSinceDelivery = Math.floor((now - deliveredAt) / (1000 * 60 * 60 * 24));
-
-        // Warn Anna when gallery expires in 5 days
-        if (client.status === 'delivered' && client.expiry) {
-          const daysLeft = Math.ceil((new Date(client.expiry) - now) / (1000 * 60 * 60 * 24));
-          if (daysLeft <= 5 && daysLeft > 0) {
-            expiringSoon.push({ name: client.name, daysLeft, email: client.email });
-          }
-        }
-
-        // Flag for Cloudinary cleanup after 60 days
-        if (daysSinceDelivery >= 60) {
-          toDelete.push({ name: client.name, folder: client.folder, email: client.email });
-        }
-      }
-
-      if (expiringSoon.length > 0) {
-        const list = expiringSoon.map(c => `• ${c.name} — ${c.daysLeft} days left`).join('\n');
-        await sendTelegram(`⏰ <b>Galleries Expiring Soon</b>\n\n${list}`);
-      }
-
-      if (toDelete.length > 0) {
-        const list = toDelete.map(c => `• ${c.name}: <code>${c.folder}</code>`).join('\n');
-        await sendTelegram(`🗑️ <b>Ready for Cloudinary Cleanup</b>
-
-These folders are 60+ days past delivery:
-
-${list}
-
-Please delete these folders from Cloudinary to free up storage.`);
-      }
-
-      return res.status(200).json({ expiringSoon: expiringSoon.length, toDelete: toDelete.length });
-    }
-
-    // ACTION: CONFIRM CLIENT (called from Telegram webhook)
+    // ── CONFIRM CLIENT (called after Anna replies in Telegram) ──────────────
     if (action === 'confirm_client') {
       const { email, confirmedName } = req.body;
       if (!email) return res.status(400).json({ error: 'Missing email' });
 
       const pendingKey = `pending:${email}`;
       const pending = await redisGet(pendingKey);
-      if (!pending) return res.status(404).json({ error: 'No pending client found' });
+      if (!pending) return res.status(404).json({ error: 'No pending client' });
 
       const clientName = confirmedName || pending.detectedName;
       const folder = generateFolder(clientName);
 
-      // Create the client in Redis
       const client = {
         id: Date.now(),
         name: clientName,
@@ -453,19 +188,12 @@ Please delete these folders from Cloudinary to free up storage.`);
       };
 
       await redisSet(`client:${email}`, client);
-      await redisSet(`clientid:${client.id}`, email);
+      await redisDel(pendingKey);
 
-      // Delete pending record
-      await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/del/${encodeURIComponent(pendingKey)}`, {
-        headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
-      });
-
-      // Build gallery URL
       const firstName = encodeURIComponent(clientName.split(' ')[0]);
       const fullName = encodeURIComponent(clientName);
       const galleryUrl = `https://portalmoments.com/gallery.html?email=${encodeURIComponent(email)}&folder=${folder}&name=${firstName}&fullname=${fullName}`;
 
-      // Send confirmation to Telegram
       await sendTelegram(`✅ <b>Client Created: ${clientName}</b>
 
 <b>Email:</b> ${email}
@@ -479,13 +207,93 @@ Please delete these folders from Cloudinary to free up storage.`);
 1️⃣ Create Desktop folder: <code>${folder}/previews/</code>
 2️⃣ Drop unedited photos there
 3️⃣ Send Template 1 to <code>${email}</code>
-   → Attach hero photo
+   → Attach free hero photo
    → Paste gallery link above`);
 
       return res.status(200).json({ message: 'Client created', client });
     }
 
-    return res.status(400).json({ error: 'Unknown action' });
+    // ── CHECK EMAILS ────────────────────────────────────────────────────────
+    const gmail = await getGmailClient();
+    const since = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+
+    const listRes = await gmail.users.messages.list({
+      userId: 'me',
+      q: `is:unread after:${since} -from:me`,
+      maxResults: 10
+    });
+
+    const messages = listRes.data.messages || [];
+    let processed = 0;
+
+    for (const msg of messages) {
+      const email = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
+      const headers = email.data.payload.headers;
+      const fromHeader = headers.find(h => h.name === 'From')?.value || '';
+      const subject = headers.find(h => h.name === 'Subject')?.value || '';
+
+      const emailMatch = fromHeader.match(/<(.+?)>/) || fromHeader.match(/([^\s]+@[^\s]+)/);
+      if (!emailMatch) {
+        await gmail.users.messages.modify({ userId: 'me', id: msg.id, requestBody: { removeLabelIds: ['UNREAD'] } });
+        continue;
+      }
+      const fromEmail = emailMatch[1].toLowerCase().trim();
+
+      // Mark read regardless
+      await gmail.users.messages.modify({ userId: 'me', id: msg.id, requestBody: { removeLabelIds: ['UNREAD'] } });
+
+      // Skip portalmoments own emails
+      if (fromEmail.includes('portalmoments')) continue;
+
+      // Block automated senders and subjects
+      if (isAutomatedEmail(fromEmail, subject)) continue;
+
+      const body = getEmailBody(email.data.payload);
+
+      // Only process real client emails with photography keywords
+      if (!isRealClientEmail(subject, body)) continue;
+
+      // Skip existing clients
+      if (await redisGet(`client:${fromEmail}`)) continue;
+
+      // Skip if already pending
+      if (await redisGet(`pending:${fromEmail}`)) continue;
+
+      // Extract name — best source is display name from email header
+      const displayName = extractDisplayName(fromHeader);
+      const detectedName = displayName || fromEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const folder = generateFolder(detectedName);
+
+      // Save as pending — waiting for Anna's confirmation
+      await redisSet(`pending:${fromEmail}`, {
+        detectedName,
+        fromEmail,
+        folder,
+        subject,
+        bodyPreview: body.slice(0, 300),
+        detectedAt: new Date().toISOString()
+      });
+
+      // Ask Anna to confirm name
+      await sendTelegram(`📸 <b>New Portal Moments Inquiry</b>
+
+<b>Detected name:</b> ${detectedName}
+<b>Email:</b> ${fromEmail}
+<b>Subject:</b> ${subject}
+
+<b>Message:</b>
+${body.slice(0, 200).trim()}
+
+━━━━━━━━━━━━━━━
+<b>Reply to confirm or correct name:</b>
+
+✅ Reply <b>confirm</b> — use <b>${detectedName}</b>
+✏️ Or type the correct name: <i>Sarah Johnson</i>`);
+
+      processed++;
+    }
+
+    return res.status(200).json({ message: 'Done', processed });
 
   } catch (error) {
     console.error('Agent error:', error);
