@@ -37,12 +37,11 @@ module.exports = async function handler(req, res) {
 
     const text = message.text.trim();
     const chatId = message.chat.id.toString();
+    const expectedId = process.env.TELEGRAM_CHAT_ID.toString();
 
-    // Log for debugging
-    console.log('Telegram update received. Chat ID:', chatId, 'Expected:', process.env.TELEGRAM_CHAT_ID);
+    console.log('Telegram update. Chat ID:', chatId, 'Expected:', expectedId);
 
-    // Only process messages from Portal Moments HQ channel
-    if (chatId !== process.env.TELEGRAM_CHAT_ID) {
+    if (chatId !== expectedId) {
       console.log('Chat ID mismatch — ignoring');
       return res.status(200).end();
     }
@@ -50,10 +49,10 @@ module.exports = async function handler(req, res) {
     // Find most recent pending client
     const pendingKeys = await redisKeys('pending:*');
     if (pendingKeys.length === 0) {
+      console.log('No pending clients found');
       return res.status(200).end();
     }
 
-    // Sort by most recent
     const pendings = [];
     for (const key of pendingKeys) {
       const p = await redisGet(key);
@@ -67,15 +66,14 @@ module.exports = async function handler(req, res) {
     if (text.toLowerCase() === 'confirm') {
       confirmedName = pending.detectedName;
     } else if (text.match(/^[A-Z][a-z]+ [A-Z][a-z]+/i)) {
-      // Looks like a name
       confirmedName = text.trim();
     } else {
-      // Not a valid reply — ignore
+      console.log('Not a valid reply:', text);
       return res.status(200).end();
     }
 
-    // Call confirm_client action
-    const confirmRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://portalmoments.com'}/api/agent?action=confirm_client`, {
+    // Call confirm_client on intake.js with www domain
+    const confirmRes = await fetch(`https://www.portalmoments.com/api/intake?action=confirm_client`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,6 +86,8 @@ module.exports = async function handler(req, res) {
     });
 
     const result = await confirmRes.json();
+    console.log('confirm_client result:', JSON.stringify(result));
+
     if (result.error) {
       await sendTelegram(`⚠️ Error creating client: ${result.error}`);
     }
@@ -96,6 +96,7 @@ module.exports = async function handler(req, res) {
 
   } catch (error) {
     console.error('Telegram webhook error:', error);
+    await sendTelegram(`⚠️ Telegram webhook error: ${error.message}`);
     return res.status(200).end();
   }
 };
