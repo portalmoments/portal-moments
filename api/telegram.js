@@ -38,8 +38,14 @@ module.exports = async function handler(req, res) {
     const text = message.text.trim();
     const chatId = message.chat.id.toString();
 
+    // Log for debugging
+    console.log('Telegram update received. Chat ID:', chatId, 'Expected:', process.env.TELEGRAM_CHAT_ID);
+
     // Only process messages from Portal Moments HQ channel
-    if (chatId !== process.env.TELEGRAM_CHAT_ID) return res.status(200).end();
+    if (chatId !== process.env.TELEGRAM_CHAT_ID) {
+      console.log('Chat ID mismatch — ignoring');
+      return res.status(200).end();
+    }
 
     // Find most recent pending client
     const pendingKeys = await redisKeys('pending:*');
