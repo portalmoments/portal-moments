@@ -73,13 +73,14 @@ module.exports = async function handler(req, res) {
     }
 
     // Call confirm_client on intake.js with www domain
-    const confirmRes = await fetch(`https://www.portalmoments.com/api/intake?action=confirm_client`, {
+    const confirmRes = await fetch(`https://www.portalmoments.com/api/intake`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.AGENT_SECRET}`
       },
       body: JSON.stringify({
+        action: 'confirm_client',
         email: pending.fromEmail,
         confirmedName
       })
