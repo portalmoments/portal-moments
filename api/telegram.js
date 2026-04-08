@@ -69,7 +69,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Call confirm_client action
-    const confirmRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://portalmoments.com'}/api/intake?action=confirm_client`, {
+    const confirmRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://portalmoments.com'}/api/agent?action=confirm_client`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
