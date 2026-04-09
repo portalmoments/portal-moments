@@ -35,9 +35,46 @@ async function getAllClients() {
     const client = await redisGet(key);
     if (client && client.email) clients.push(client);
   }
-  // Sort newest first
   clients.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return clients;
+}
+
+async function sendTelegram(message) {
+  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: process.env.TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: 'HTML'
+    })
+  });
+}
+
+async function sendGmail(to, subject, body, threadId) {
+  const { google } = require('googleapis');
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID,
+    process.env.GMAIL_CLIENT_SECRET,
+    'https://developers.google.com/oauthplayground'
+  );
+  oauth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+  const message = [
+    `To: ${to}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'MIME-Version: 1.0',
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+    '',
+    body
+  ].join('\n');
+
+  const encoded = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+  const requestBody = { raw: encoded };
+  if (threadId) requestBody.threadId = threadId;
+
+  await gmail.users.messages.send({ userId: 'me', requestBody });
 }
 
 module.exports = async function handler(req, res) {
@@ -46,7 +83,6 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Simple auth check
   const auth = req.headers.authorization;
   if (!auth || auth !== `Bearer ${process.env.AGENT_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -97,15 +133,58 @@ module.exports = async function handler(req, res) {
       const client = await redisGet(key);
       if (!client) return res.status(404).json({ error: 'Client not found' });
 
-      // If marking delivered, set 30 day expiry from now
+      // If marking delivered — set expiry and send Template 4
       if (updates.status === 'delivered' && client.status !== 'delivered') {
         const expiry = new Date();
         expiry.setDate(expiry.getDate() + 30);
         updates.expiry = expiry.toISOString().split('T')[0];
         updates.deliveredAt = new Date().toISOString();
+
+        const firstName = client.name.split(' ')[0];
+        const firstNameEnc = encodeURIComponent(firstName);
+        const fullName = encodeURIComponent(client.name);
+        const galleryUrl = `https://www.portalmoments.com/gallery.html?email=${encodeURIComponent(client.email)}&folder=${client.folder}&name=${firstNameEnc}&fullname=${fullName}&expiry=${updates.expiry}&state=delivered`;
+
+        // Send Template 4
+        try {
+          await sendGmail(
+            client.email,
+            'Your Portal Moments are ready \uD83C\uDF3F',
+            `Hello ${firstName},
+
+Your photos are here!
+
+I hope when you look at these, you feel exactly what I felt when I captured them.
+
+Access your full gallery here:
+${galleryUrl}
+
+Warmly,
+Anna Totska
+Portal Moments
+portalmoments.com
+@portalmoments`,
+            client.threadId || null
+          );
+        } catch(e) {
+          console.error('Template 4 email error:', e.message);
+        }
+
+        // Notify Anna
+        try {
+          await sendTelegram(`✅ <b>Delivered: ${client.name}</b>
+
+Template 4 sent automatically.
+Gallery expires: ${updates.expiry}
+
+<b>Gallery link:</b>
+<code>${galleryUrl}</code>`);
+        } catch(e) {
+          console.error('Telegram notify error:', e.message);
+        }
       }
 
-      // If resetting, clear expiry
+      // If resetting — clear expiry
       if (updates.status === 'gallery') {
         updates.expiry = null;
         updates.deliveredAt = null;
