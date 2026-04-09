@@ -109,6 +109,7 @@ module.exports = async function handler(req, res) {
       client.purchasedAt = new Date().toISOString();
       client.revenue = amount;
       client.selectedPhotos = selectedPhotos;
+      client.galleryState = 'purchased';
       await redisSet(`client:${clientEmail.toLowerCase()}`, client);
 
       // Send Template 3 to client
