@@ -184,7 +184,8 @@ module.exports = async function handler(req, res) {
         expiry: null,
         revenue: 0,
         createdAt: new Date().toISOString(),
-        emailSubject: pending.subject
+        emailSubject: pending.subject,
+        threadId: pending.threadId || null
       };
 
       await redisSet(`client:${email}`, client);
@@ -264,12 +265,16 @@ module.exports = async function handler(req, res) {
       const detectedName = displayName || fromEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       const folder = generateFolder(detectedName);
 
+      // Get thread ID from email
+      const threadId = email.data.threadId || null;
+
       // Save as pending — waiting for Anna's confirmation
       await redisSet(`pending:${fromEmail}`, {
         detectedName,
         fromEmail,
         folder,
         subject,
+        threadId,
         bodyPreview: body.slice(0, 300),
         detectedAt: new Date().toISOString()
       });
