@@ -93,7 +93,7 @@ module.exports = async function handler(req, res) {
 
       // Send Template 3 to client
       const firstName = client.name.split(' ')[0];
-      await sendGmail(
+      try { await sendGmail(
         clientEmail,
         'Your collection is being prepared ✨',
         `Hello ${firstName},
@@ -107,7 +107,7 @@ Anna Totska
 Portal Moments
 portalmoments.com
 @portalmoments`
-      );
+      ); } catch(gmailErr) { console.error('Gmail error:', gmailErr.message); await sendTelegram(`⚠️ Email failed: ${gmailErr.message}`); }
 
       // Notify Anna in Telegram
       await sendTelegram(`💳 <b>Payment Received!</b>
