@@ -36,15 +36,16 @@ async function sendGmail(to, subject, body) {
 
   const message = [
     `To: ${to}`,
-    'Content-Type: text/plain; charset=utf-8',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
     'MIME-Version: 1.0',
-    `Subject: ${subject}`,
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
     '',
     body
   ].join('\n');
 
-  const encoded = Buffer.from(message).toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_');
+  const fullMessage = message.join('\n');
+  const encoded = Buffer.from(fullMessage).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
 
   await gmail.users.messages.send({
     userId: 'me',
