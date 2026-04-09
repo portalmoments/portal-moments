@@ -51,7 +51,7 @@ async function sendTelegram(message) {
   });
 }
 
-async function sendGmail(to, subject, body, threadId) {
+async function sendGmail(to, subject, body, threadId, messageId) {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
     process.env.GMAIL_CLIENT_ID,
@@ -65,9 +65,11 @@ async function sendGmail(to, subject, body, threadId) {
     `To: ${to}`,
     'Content-Type: text/plain; charset=UTF-8',
     'MIME-Version: 1.0',
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
   ];
-  if (!threadId) {
-    headers.push(`Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`);
+  if (messageId) {
+    headers.push(`In-Reply-To: ${messageId}`);
+    headers.push(`References: ${messageId}`);
   }
   headers.push('', body);
   const message = headers.join('\n');
@@ -166,7 +168,8 @@ Anna Totska
 Portal Moments
 portalmoments.com
 @portalmoments`,
-            client.threadId || null
+            client.threadId || null,
+            client.messageId || null
           );
         } catch(e) {
           console.error('Template 4 email error:', e.message);
