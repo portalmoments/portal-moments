@@ -44,7 +44,7 @@ async function sendGmail(to, subject, body) {
     body
   ].join('\n');
 
-  const encoded = Buffer.from(message.join('\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+  const encoded = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
 
   await gmail.users.messages.send({
     userId: 'me',
