@@ -34,14 +34,17 @@ async function sendGmail(to, subject, body, threadId) {
   oauth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-  const message = [
+  const headers = [
     `To: ${to}`,
     'Content-Type: text/plain; charset=UTF-8',
     'MIME-Version: 1.0',
-    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-    '',
-    body
-  ].join('\n');
+  ];
+  // Only add subject if not replying in a thread
+  if (!threadId) {
+    headers.push(`Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`);
+  }
+  headers.push('', body);
+  const message = headers.join('\n');
 
   const encoded = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
 
@@ -97,7 +100,7 @@ module.exports = async function handler(req, res) {
       const firstName = client.name.split(' ')[0];
       try { await sendGmail(
         clientEmail,
-        'Your collection is being prepared ✨',
+        `Re: ${client.emailSubject || 'Your Portal Moment'}`,
         `Hello ${firstName},
 
 Your order is confirmed — thank you!
