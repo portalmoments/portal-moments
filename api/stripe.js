@@ -24,7 +24,7 @@ async function sendTelegram(message) {
   });
 }
 
-async function sendGmail(to, subject, body, threadId) {
+async function sendGmail(to, subject, body, threadId, messageId) {
   const { google } = require('googleapis');
   const oauth2Client = new google.auth.OAuth2(
     process.env.GMAIL_CLIENT_ID,
@@ -38,11 +38,15 @@ async function sendGmail(to, subject, body, threadId) {
     `To: ${to}`,
     'Content-Type: text/plain; charset=UTF-8',
     'MIME-Version: 1.0',
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
   ];
-  // Only add subject if not replying in a thread
-  if (!threadId) {
-    headers.push(`Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`);
+
+  // Add threading headers if replying
+  if (messageId) {
+    headers.push(`In-Reply-To: ${messageId}`);
+    headers.push(`References: ${messageId}`);
   }
+
   headers.push('', body);
   const message = headers.join('\n');
 
@@ -112,7 +116,8 @@ Anna Totska
 Portal Moments
 portalmoments.com
 @portalmoments`,
-        client.threadId || null
+        client.threadId || null,
+        client.messageId || null
       ); } catch(gmailErr) { console.error('Gmail error:', gmailErr.message); await sendTelegram(`⚠️ Email failed: ${gmailErr.message}`); }
 
       // Notify Anna in Telegram
