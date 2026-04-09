@@ -192,7 +192,7 @@ module.exports = async function handler(req, res) {
 
       const firstName = encodeURIComponent(clientName.split(' ')[0]);
       const fullName = encodeURIComponent(clientName);
-      const galleryUrl = `https://portalmoments.com/gallery.html?email=${encodeURIComponent(email)}&folder=${folder}&name=${firstName}&fullname=${fullName}`;
+      const galleryUrl = `https://www.portalmoments.com/gallery.html?email=${encodeURIComponent(email)}&folder=${folder}&name=${firstName}&fullname=${fullName}`;
 
       await sendTelegram(`✅ <b>Client Created: ${clientName}</b>
 
