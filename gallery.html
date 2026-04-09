@@ -124,6 +124,8 @@
   var clientFullName = urlParams.get('fullname') || clientName;
   var expiryDate = urlParams.get('expiry');
   var galleryState = urlParams.get('state') || 'preview';
+  var selectedParam = urlParams.get('selected');
+  var selectedPhotoIds = selectedParam ? selectedParam.split(',') : [];
 
   var packages = [
     { id: 'spark', name: 'Spark Pack', price: '$111', desc: '5 edited photos', limit: 5, stripeLink: 'https://buy.stripe.com/8x23cvdsygHparP3nN5AQ01' },
@@ -175,6 +177,14 @@
         galleryPhotos = d2.photos;
       } else {
         galleryPhotos = d.photos;
+      }
+      // If purchased/editing state and selected photos exist, filter to show only selected
+      if ((galleryState === 'purchased' || galleryState === 'editing') && selectedPhotoIds.length > 0) {
+        galleryPhotos = galleryPhotos.filter(function(p) {
+          return selectedPhotoIds.some(function(id) {
+            return p.publicId === id || p.publicId.endsWith(id);
+          });
+        });
       }
       renderPreviewGallery(clientName, galleryPhotos);
     } catch(e) { showError(); }
