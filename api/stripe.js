@@ -73,7 +73,8 @@ module.exports = async function handler(req, res) {
 
       // Get client email from Stripe session
       const clientEmail = session.customer_details?.email ||
-                         session.customer_email;
+                         session.customer_email ||
+                         session.metadata?.clientEmail;
 
       if (!clientEmail) {
         console.log('No email in Stripe session');
@@ -87,9 +88,18 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ received: true });
       }
 
-      // Determine package from amount
+      // Get selected photos from metadata or Redis
+      let selectedPhotos = [];
+      if (session.metadata?.selectedPhotos) {
+        selectedPhotos = session.metadata.selectedPhotos.split(',');
+      } else {
+        const saved = await redisGet(`selected:${clientEmail.toLowerCase()}`);
+        if (saved?.selectedPhotos) selectedPhotos = saved.selectedPhotos;
+      }
+
+      // Determine package from amount or metadata
       const amount = session.amount_total / 100;
-      const packageName = amount >= 200 ? 'Full Portal' : 'Spark Pack';
+      const packageName = session.metadata?.package || (amount >= 200 ? 'Full Portal' : 'Spark Pack');
       const price = `$${amount.toFixed(2)} CAD`;
 
       // Update client status to purchased
@@ -98,6 +108,7 @@ module.exports = async function handler(req, res) {
       client.price = price;
       client.purchasedAt = new Date().toISOString();
       client.revenue = amount;
+      client.selectedPhotos = selectedPhotos;
       await redisSet(`client:${clientEmail.toLowerCase()}`, client);
 
       // Send Template 3 to client
@@ -121,6 +132,10 @@ portalmoments.com
       ); } catch(gmailErr) { console.error('Gmail error:', gmailErr.message); await sendTelegram(`⚠️ Email failed: ${gmailErr.message}`); }
 
       // Notify Anna in Telegram
+      const photoList = selectedPhotos.length > 0
+        ? selectedPhotos.map((p, i) => `${i+1}. ${p.split('/').pop()}`).join('\n')
+        : 'Check gallery for selections';
+
       await sendTelegram(`💳 <b>Payment Received!</b>
 
 <b>Client:</b> ${client.name}
@@ -128,12 +143,15 @@ portalmoments.com
 <b>Package:</b> ${packageName}
 <b>Amount:</b> ${price}
 
+<b>Selected photos:</b>
+${photoList}
+
 ━━━━━━━━━━━━━━━
 ✅ Template 3 sent to client automatically
 ✅ Status updated to Purchased
 
 <b>Your next step:</b>
-🎨 Edit photos in Lightroom
+🎨 Edit these photos in Lightroom
 📁 Upload to Cloudinary: <code>${client.folder}/edited/</code>`);
 
       return res.status(200).json({ received: true });
