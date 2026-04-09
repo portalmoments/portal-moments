@@ -256,9 +256,14 @@
   function galleryUrl(client) {
     const firstName = encodeURIComponent(client.name.split(' ')[0]);
     const fullName = encodeURIComponent(client.name);
-    const stateParam = (client.status === 'editing' || client.status === 'delivered') ? '&state=' + client.status : '';
+    const state = client.status === 'delivered' ? 'delivered' : 
+                  client.status === 'editing' ? 'editing' :
+                  client.status === 'purchased' ? 'purchased' : '';
+    const stateParam = state ? '&state=' + state : '';
     const expiryParam = client.expiry ? '&expiry=' + client.expiry : '';
-    return SITE_URL + '/gallery.html?email=' + encodeURIComponent(client.email) + '&folder=' + client.folder + '&name=' + firstName + '&fullname=' + fullName + expiryParam + stateParam;
+    const selectedParam = (client.selectedPhotos && client.selectedPhotos.length > 0 && state !== 'delivered') 
+      ? '&selected=' + encodeURIComponent(client.selectedPhotos.join(',')) : '';
+    return SITE_URL + '/gallery.html?email=' + encodeURIComponent(client.email) + '&folder=' + client.folder + '&name=' + firstName + '&fullname=' + fullName + expiryParam + stateParam + selectedParam;
   }
 
   function expiryInfo(client) {
