@@ -199,7 +199,7 @@
     document.getElementById('app').innerHTML =
       '<div class="gallery-hero">' +
         '<p class="gallery-greeting">Hello, ' + name + '.</p>' +
-        '<p class="gallery-sub">Your Portal Moment is ready.<br>Select a package, then choose your favourite photos.</p>' +
+        '<p class="gallery-sub">' + (galleryState === 'purchased' || galleryState === 'editing' ? 'Here are the photos you selected.<br>We are carefully editing them for you.' : 'Your Portal Moment is ready.<br>Select a package, then choose your favourite photos.') + '</p>' +
       '</div>' +
       '<div class="free-note"><p class="free-note-text">Your complimentary photo has already been sent to your email.</p></div>' +
       daysLeft +
@@ -227,11 +227,12 @@
           '</div>';
         }).join('') +
       '</div>' +
+      (galleryState === 'purchased' || galleryState === 'editing' ? '' :
       '<div class="purchase-section">' +
         '<p class="purchase-summary" id="purchaseSummary">Select a package above to begin</p>' +
         '<button class="purchase-btn" id="purchaseBtn" disabled onclick="handlePurchase()">Purchase Collection</button>' +
         '<p class="purchase-note">Secure payment via Stripe · Full resolution delivered after purchase</p>' +
-      '</div>';
+      '</div>');
     document.querySelectorAll('.photo-item img').forEach(function(img) {
       img.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     });
