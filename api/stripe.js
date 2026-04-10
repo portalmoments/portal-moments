@@ -114,6 +114,9 @@ module.exports = async function handler(req, res) {
 
       // Send Template 3 to client
       const firstName = client.name.split(' ')[0];
+      // Build gallery link with selected photos
+      const selectedParam = selectedPhotos.length > 0 ? '&selected=' + encodeURIComponent(selectedPhotos.join(',')) : '';
+      const purchasedGalleryUrl = `https://www.portalmoments.com/gallery.html?email=${encodeURIComponent(clientEmail)}&folder=${client.folder}&name=${encodeURIComponent(firstName)}&fullname=${encodeURIComponent(client.name)}&state=purchased${selectedParam}`;
       try { await sendGmail(
         clientEmail,
         `Re: ${client.emailSubject || 'Your Portal Moment'}`,
@@ -121,7 +124,10 @@ module.exports = async function handler(req, res) {
 
 Your order is confirmed — thank you!
 
-I'm now preparing your full collection with the same care as the moment itself. You'll receive your edited photos shortly.
+Here is what you ordered:
+${purchasedGalleryUrl}
+
+I am now preparing your collection with the same care as the moment itself. You will receive your edited photos as soon as they are ready.
 
 Warmly,
 Anna Totska
