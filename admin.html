@@ -257,8 +257,7 @@
     const firstName = encodeURIComponent(client.name.split(' ')[0]);
     const fullName = encodeURIComponent(client.name);
     const state = client.status === 'delivered' ? 'delivered' : 
-                  client.status === 'editing' ? 'editing' :
-                  client.status === 'purchased' ? 'purchased' : '';
+                  (client.status === 'editing' || client.status === 'purchased') ? 'purchased' : '';
     const stateParam = state ? '&state=' + state : '';
     const expiryParam = client.expiry ? '&expiry=' + client.expiry : '';
     const selectedParam = (client.selectedPhotos && client.selectedPhotos.length > 0 && state !== 'delivered') 
@@ -290,7 +289,7 @@
     const clients = currentFilter === 'all' ? allClients : allClients.filter(c => c.status === currentFilter);
 
     document.getElementById('statTotal').textContent = allClients.length;
-    document.getElementById('statPurchased').textContent = allClients.filter(c => c.status === 'purchased').length;
+    document.getElementById('statPurchased').textContent = allClients.filter(c => c.status === 'purchased' || c.status === 'editing' || c.status === 'delivered').length;
     document.getElementById('statEditing').textContent = allClients.filter(c => c.status === 'editing').length;
     document.getElementById('statDelivered').textContent = allClients.filter(c => c.status === 'delivered').length;
     document.getElementById('statRevenue').textContent = '$' + allClients.reduce((s, c) => s + (c.revenue || 0), 0);
