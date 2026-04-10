@@ -158,7 +158,7 @@
 
     if (galleryState === 'delivered') {
       try {
-        var r = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/edited'));
+        var r = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder) + '&type=edited');
         var d = await r.json();
         if (!d.photos || d.photos.length === 0) { showEditing(); return; }
         galleryPhotos = d.photos;
@@ -168,7 +168,7 @@
     }
 
     try {
-      var r = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder + '/previews'));
+      var r = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder));
       var d = await r.json();
       if (!d.photos || d.photos.length === 0) {
         var r2 = await fetch('/api/gallery?folder=' + encodeURIComponent(clientFolder));
@@ -182,9 +182,13 @@
       if ((galleryState === 'purchased' || galleryState === 'editing') && selectedPhotoIds.length > 0) {
         galleryPhotos = galleryPhotos.filter(function(p) {
           return selectedPhotoIds.some(function(id) {
-            return p.publicId === id || p.publicId.endsWith(id);
+            var pid = p.publicId.toLowerCase().trim();
+            var sid = decodeURIComponent(id).toLowerCase().trim();
+            return pid === sid || pid.endsWith(sid) || sid.endsWith(pid);
           });
         });
+        // If filter returns nothing, show all photos (fallback)
+        if (galleryPhotos.length === 0) galleryPhotos = (d && d.photos) || [];
       }
       renderPreviewGallery(clientName, galleryPhotos);
     } catch(e) { showError(); }
