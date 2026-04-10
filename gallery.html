@@ -305,6 +305,7 @@
         '<div class="editing-divider"></div>' +
         '<p style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:1.4rem;color:var(--black)">Your photos are being edited.</p>' +
         '<p class="error-sub">Each photo is being prepared with the same care as the moment itself.<br>You will receive an email when your collection is ready.</p>' +
+        (selectedPhotoIds.length > 0 ? '<p class="error-sub" style="margin-top:1.5rem">Here is what you ordered:<br>' + selectedPhotoIds.map(function(p){ return p.split('/').pop(); }).join('<br>') + '</p>' : '') +
         '<a href="mailto:portalmoments@gmail.com" class="back-link">Contact Anna</a>' +
       '</div>';
   }
